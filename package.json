@@ -1,0 +1,35 @@
+{
+  "name": "ios-blogs-analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CLI tool to analyze iOS blog feeds for AI and mobile topics using Ollama.",
+  "main": "dist/index.js",
+  "bin": {
+    "ios-blogs-analyzer": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node --watch src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "echo 'No lint command configured yet'"
+  },
+  "keywords": [
+    "ios",
+    "rss",
+    "ollama",
+    "typescript",
+    "cli"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4",
+    "vitest": "^1.6.0"
+  }
+}

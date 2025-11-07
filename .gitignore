@@ -22,3 +22,10 @@
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
 
+
+# Node/TypeScript outputs
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
