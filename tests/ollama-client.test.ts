@@ -4,6 +4,8 @@ import {
   OllamaConfigurationError,
   OllamaRequestError,
   OllamaParseError,
+  OllamaTimeoutError,
+  OllamaUnavailableError,
   type FetchInit,
   type FetchResponse,
 } from "../src/ollama-client.js";
@@ -162,5 +164,97 @@ describe("OllamaClient", () => {
     const client = new OllamaClient({ fetcher });
 
     await expect(client.analyze("Ambiguous content")).rejects.toThrowError(OllamaParseError);
+  });
+
+  it("retries transient failures and eventually succeeds", async () => {
+    const failures = [new TypeError("network down"), new TypeError("still down")];
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(async () => {
+      const failure = failures.shift();
+      if (failure) {
+        throw failure;
+      }
+
+      return createJsonResponse({
+        response: JSON.stringify({ relevant: true, confidence: 0.7, reason: "Mentions Core ML" }),
+      });
+    });
+
+    const client = new OllamaClient({ fetcher });
+    const result = await client.analyzeText("Discusses Vision Pro with Core ML");
+
+    expect(result).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("halts on non-retriable errors", async () => {
+    const { mock, fetcher } = createMockFetcher(async () =>
+      createJsonResponse(
+        { error: "bad request" },
+        {
+          ok: false,
+          status: 400,
+          statusText: "Bad Request",
+          text: async () => "invalid payload",
+        },
+      ),
+    );
+
+    const client = new OllamaClient({ fetcher });
+
+    await expect(client.analyze("bad input"))
+      .rejects.toThrowError(new OllamaRequestError("", 400).constructor);
+    expect(mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("throws OllamaUnavailableError after exceeding retries", async () => {
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(async () => {
+      throw new TypeError("connection refused");
+    });
+
+    const client = new OllamaClient({ fetcher, maxRetries: 1, retryDelayMs: 0 });
+
+    await expect(client.analyze("No network"))
+      .rejects.toThrowError(OllamaUnavailableError);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("supports graceful degradation when configured", async () => {
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(async () => {
+      throw new TypeError("no route to host");
+    });
+
+    const client = new OllamaClient({ fetcher, maxRetries: 0 });
+    const analysis = await client.analyze("Offline scenario", { gracefulDegradation: true });
+
+    expect(analysis.relevant).toBe(false);
+    expect(analysis.confidence).toBe(0);
+    expect(analysis.reason).toMatch(/Failed to communicate/i);
+    expect(analysis.rawResponse).toBe("");
+  });
+
+  it("honours request timeout", async () => {
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(
+      async (_url, init) =>
+        new Promise<FetchResponse>((_resolve, reject) => {
+          init?.signal?.addEventListener(
+            "abort",
+            () => {
+              const reason = init.signal?.reason;
+              reject(reason instanceof Error ? reason : new OllamaTimeoutError("aborted"));
+            },
+            { once: true },
+          );
+        }),
+    );
+
+    const client = new OllamaClient({ fetcher, timeoutMs: 5, maxRetries: 0 });
+    const promise = client.analyze("long running");
+
+    await expect(promise).rejects.toThrowError(OllamaUnavailableError);
+    await promise.catch((error) => {
+      const cause = (error as Error & { cause?: unknown }).cause;
+      expect(cause).toBeInstanceOf(OllamaTimeoutError);
+    });
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });

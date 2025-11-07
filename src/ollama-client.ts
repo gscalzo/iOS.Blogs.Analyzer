@@ -2,6 +2,10 @@ const DEFAULT_BASE_URL = "http://127.0.0.1:11434";
 const DEFAULT_MODEL = "llama3.1";
 const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
 const SUPPORTED_MODELS = ["llama3.1", "qwq"] as const;
+const DEFAULT_TIMEOUT_MS = 15_000;
+const DEFAULT_MAX_RETRIES = 2;
+const DEFAULT_RETRY_DELAY_MS = 250;
+const DEFAULT_RETRY_MULTIPLIER = 2;
 
 type SupportedModel = (typeof SUPPORTED_MODELS)[number];
 
@@ -26,11 +30,16 @@ export interface OllamaClientOptions {
   readonly baseUrl?: string;
   readonly model?: string;
   readonly fetcher?: FetchLike;
+  readonly timeoutMs?: number;
+  readonly maxRetries?: number;
+  readonly retryDelayMs?: number;
+  readonly retryMultiplier?: number;
 }
 
 export interface AnalyzeTextOptions {
   readonly model?: string;
   readonly signal?: AbortSignal;
+  readonly gracefulDegradation?: boolean;
 }
 
 interface GenerateResponse {
@@ -66,15 +75,40 @@ export class OllamaParseError extends Error {
   }
 }
 
+export class OllamaTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OllamaTimeoutError";
+  }
+}
+
+export class OllamaUnavailableError extends Error {
+  readonly attempts: number;
+
+  constructor(message: string, { cause, attempts }: { cause?: unknown; attempts: number }) {
+    super(message, cause !== undefined ? { cause } : undefined);
+    this.name = "OllamaUnavailableError";
+    this.attempts = attempts;
+  }
+}
+
 export class OllamaClient {
   private readonly baseUrl: string;
   private readonly fetcher: FetchLike;
   private readonly defaultModel: SupportedModel;
+  private readonly timeoutMs: number;
+  private readonly maxRetries: number;
+  private readonly retryDelayMs: number;
+  private readonly retryMultiplier: number;
 
   constructor(options: OllamaClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
     this.fetcher = this.resolveFetcher(options.fetcher);
     this.defaultModel = this.resolveModel(options.model);
+    this.timeoutMs = this.normalizeTimeout(options.timeoutMs);
+    this.maxRetries = this.normalizeRetryCount(options.maxRetries);
+    this.retryDelayMs = this.normalizeDelay(options.retryDelayMs);
+    this.retryMultiplier = this.normalizeMultiplier(options.retryMultiplier);
   }
 
   get model(): SupportedModel {
@@ -82,15 +116,19 @@ export class OllamaClient {
   }
 
   async checkConnection(options: { signal?: AbortSignal } = {}): Promise<boolean> {
-    const response = await this.fetcher(this.joinUrl("/api/tags"), {
-      method: "GET",
-      signal: options.signal,
-    });
+    await this.executeWithRetry(
+      async () => {
+        const response = await this.performFetch("/api/tags", { method: "GET" }, options.signal);
 
-    if (!response.ok) {
-      const detail = await this.extractErrorDetail(response);
-      throw new OllamaRequestError(`Unable to reach Ollama: ${detail}`, response.status);
-    }
+        if (!response.ok) {
+          const detail = await this.extractErrorDetail(response);
+          throw new OllamaRequestError(`Unable to reach Ollama: ${detail}`, response.status);
+        }
+
+        return true;
+      },
+      { signal: options.signal },
+    );
 
     return true;
   }
@@ -107,29 +145,47 @@ export class OllamaClient {
       stream: false,
     } as const;
 
-    const response = await this.fetcher(this.joinUrl("/api/generate"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(payload),
-      signal: options.signal,
-    });
+    try {
+      const response = await this.executeWithRetry(
+        async () => {
+          const httpResponse = await this.performFetch(
+            "/api/generate",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(payload),
+            },
+            options.signal,
+          );
 
-    if (!response.ok) {
-      const detail = await this.extractErrorDetail(response);
-      throw new OllamaRequestError(`Ollama generation failed: ${detail}`, response.status);
+          if (!httpResponse.ok) {
+            const detail = await this.extractErrorDetail(httpResponse);
+            throw new OllamaRequestError(`Ollama generation failed: ${detail}`, httpResponse.status);
+          }
+
+          return httpResponse;
+        },
+        { signal: options.signal },
+      );
+
+      const data = (await response.json()) as GenerateResponse;
+      const answer = data.response?.trim();
+
+      if (!answer) {
+        throw new OllamaRequestError("Ollama response did not include a decision", response.status);
+      }
+
+      return this.parseDecision(answer);
+    } catch (error) {
+      if (options.gracefulDegradation && this.isGracefulFailure(error)) {
+        return this.createFallbackAnalysis(error);
+      }
+
+      throw error;
     }
-
-    const data = (await response.json()) as GenerateResponse;
-    const answer = data.response?.trim();
-
-    if (!answer) {
-      throw new OllamaRequestError("Ollama response did not include a decision", response.status);
-    }
-
-    return this.parseDecision(answer);
   }
 
   async analyzeText(description: string, options: AnalyzeTextOptions = {}): Promise<boolean> {
@@ -170,8 +226,210 @@ export class OllamaClient {
     return normalized as SupportedModel;
   }
 
+  private normalizeTimeout(timeout?: number): number {
+    if (typeof timeout === "number" && Number.isFinite(timeout) && timeout >= 0) {
+      return timeout;
+    }
+
+    return DEFAULT_TIMEOUT_MS;
+  }
+
+  private normalizeRetryCount(count?: number): number {
+    if (typeof count === "number" && Number.isInteger(count) && count >= 0) {
+      return count;
+    }
+
+    return DEFAULT_MAX_RETRIES;
+  }
+
+  private normalizeDelay(delay?: number): number {
+    if (typeof delay === "number" && Number.isFinite(delay) && delay >= 0) {
+      return delay;
+    }
+
+    return DEFAULT_RETRY_DELAY_MS;
+  }
+
+  private normalizeMultiplier(multiplier?: number): number {
+    if (typeof multiplier === "number" && Number.isFinite(multiplier) && multiplier >= 1) {
+      return multiplier;
+    }
+
+    return DEFAULT_RETRY_MULTIPLIER;
+  }
+
   private joinUrl(path: string): string {
     return `${this.baseUrl.replace(/\/$/, "")}${path}`;
+  }
+
+  private async executeWithRetry<T>(
+    operation: () => Promise<T>,
+    options: { signal?: AbortSignal } = {},
+  ): Promise<T> {
+    let attempt = 0;
+    let delay = this.retryDelayMs;
+
+    // Attempt loop with exponential backoff for transient failures.
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (options.signal?.aborted) {
+        throw this.toAbortError(options.signal);
+      }
+
+      try {
+        return await operation();
+      } catch (error) {
+        const retryable = this.shouldRetry(error);
+
+        if (!retryable) {
+          throw error instanceof Error ? error : new Error(String(error));
+        }
+
+        if (attempt >= this.maxRetries) {
+          const cause = error instanceof Error ? error : new Error(String(error));
+          throw new OllamaUnavailableError(
+            `Failed to communicate with Ollama after ${attempt + 1} attempt(s): ${cause.message}`,
+            { cause, attempts: attempt + 1 },
+          );
+        }
+
+        attempt += 1;
+        await this.sleep(delay, options.signal);
+        delay *= this.retryMultiplier;
+      }
+    }
+  }
+
+  private shouldRetry(error: unknown): boolean {
+    if (error instanceof OllamaTimeoutError) {
+      return true;
+    }
+
+    if (error instanceof OllamaRequestError) {
+      return error.status >= 500 || error.status === 429;
+    }
+
+    if (error instanceof OllamaUnavailableError) {
+      return true;
+    }
+
+    if (error instanceof TypeError) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private async sleep(delay: number, signal?: AbortSignal): Promise<void> {
+    if (delay <= 0) {
+      return;
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup();
+        resolve();
+      }, delay);
+
+      const onAbort = () => {
+        cleanup();
+        reject(this.toAbortError(signal!));
+      };
+
+      const cleanup = () => {
+        clearTimeout(timer);
+        if (signal) {
+          signal.removeEventListener("abort", onAbort);
+        }
+      };
+
+      if (signal) {
+        if (signal.aborted) {
+          cleanup();
+          reject(this.toAbortError(signal));
+          return;
+        }
+
+        signal.addEventListener("abort", onAbort, { once: true });
+      }
+    });
+  }
+
+  private toAbortError(signal: AbortSignal): Error {
+    const reason = signal.reason;
+
+    if (reason instanceof Error) {
+      return reason;
+    }
+
+    if (typeof reason === "string") {
+      const abortError = new Error(reason);
+      abortError.name = "AbortError";
+      return abortError;
+    }
+
+    const abortError = new Error("The operation was aborted");
+    abortError.name = "AbortError";
+    return abortError;
+  }
+
+  private async performFetch(path: string, init: FetchInit, signal?: AbortSignal): Promise<FetchResponse> {
+    const controller = new AbortController();
+    let timeoutId: NodeJS.Timeout | undefined;
+    let onAbort: (() => void) | undefined;
+
+    if (signal) {
+      if (signal.aborted) {
+        throw this.toAbortError(signal);
+      }
+
+      onAbort = () => {
+        controller.abort(signal.reason);
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+
+    if (this.timeoutMs > 0) {
+      timeoutId = setTimeout(() => {
+        controller.abort(new OllamaTimeoutError(`Request to ${path} timed out after ${this.timeoutMs}ms`));
+      }, this.timeoutMs);
+    }
+
+    try {
+      const response = await this.fetcher(this.joinUrl(path), {
+        ...init,
+        signal: controller.signal,
+      });
+      return response;
+    } catch (error) {
+      if (controller.signal.aborted) {
+        const reason = controller.signal.reason;
+
+        if (reason instanceof Error) {
+          throw reason;
+        }
+
+        if (typeof reason === "string") {
+          const abortError = new Error(reason);
+          abortError.name = "AbortError";
+          throw abortError;
+        }
+
+        const abortError = new Error("The request was aborted");
+        abortError.name = "AbortError";
+        throw abortError;
+      }
+
+      throw error;
+    } finally {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      if (signal && onAbort) {
+        signal.removeEventListener("abort", onAbort);
+      }
+    }
   }
 
   private async extractErrorDetail(response: FetchResponse): Promise<string> {
@@ -316,6 +574,29 @@ export class OllamaClient {
       .filter((item) => item.length > 0);
 
     return tags.length > 0 ? tags.slice(0, 3) : undefined;
+  }
+
+  private isGracefulFailure(error: unknown): boolean {
+    if (error instanceof OllamaUnavailableError || error instanceof OllamaTimeoutError) {
+      return true;
+    }
+
+    if (error instanceof OllamaRequestError) {
+      return error.status >= 500 || error.status === 429;
+    }
+
+    return false;
+  }
+
+  private createFallbackAnalysis(error: unknown): AnalysisResult {
+    const message = error instanceof Error ? error.message : "Ollama is unavailable";
+    return {
+      relevant: false,
+      confidence: 0,
+      reason: message,
+      tags: undefined,
+      rawResponse: "",
+    };
   }
 }
 
