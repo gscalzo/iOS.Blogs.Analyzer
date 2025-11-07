@@ -4,10 +4,10 @@
 
 Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identify posts related to AI and mobile development using local Ollama LLM.
 
-## Current Status: 🟡 Phase 3 Pending Kickoff
+## Current Status: 🟡 Phase 3 In Progress
 
 **Last Updated**: 2025-11-07  
-**Current Session**: Phase 1 Setup
+**Current Session**: Phase 3 Ollama Client
 
 ---
 
@@ -85,11 +85,11 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ### Phase 3: Ollama Integration 🔲
 
 #### 3.1 Ollama Client
-- [ ] Implement Ollama HTTP API client
-- [ ] Create function: `analyzeText(description: string): Promise<boolean>`
-- [ ] Support both `llama3.1` and `qwq` models
-- [ ] Add model selection via CLI parameter or env variable
-- [ ] Implement connection checking
+- [x] Implement Ollama HTTP API client
+- [x] Create function: `analyzeText(description: string): Promise<boolean>`
+- [x] Support both `llama3.1` and `qwq` models
+- [x] Add model selection via CLI parameter or env variable (via `IOS_BLOGS_ANALYZER_MODEL`)
+- [x] Implement connection checking
 
 #### 3.2 Prompt Engineering
 - [ ] Design prompt for AI/mobile development detection
@@ -288,7 +288,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 1. ✅ Create AGENTS.md ← DONE
 2. ✅ Create plan.md ← DONE
-3. Start Phase 3: sketch Ollama HTTP client with configurable model selection
+3. ✅ Start Phase 3: sketch Ollama HTTP client with configurable model selection
 4. Define retry/backoff strategy for Ollama calls and outline tests
 5. Prepare prompt design experiments for AI/mobile relevance detection
 
@@ -358,6 +358,20 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 **Next Session**:
 - Begin Phase 3 by scaffolding the Ollama HTTP client and connection checks
 - Draft retry/backoff approach and corresponding mock-based tests
+
+### Session 5: 2025-11-07 - Phase 3 Kickoff
+**Status**: 🔄 In Progress
+
+**Completed**:
+- Implemented `OllamaClient` with connection check, configurable base model, and `analyzeText` helper
+- Added Vitest suite (`tests/ollama-client.test.ts`) covering success, failure, and configuration cases
+
+**Issues Encountered**:
+- None
+
+**Next Session**:
+- Define retry/backoff strategy and add associated tests
+- Begin prompt design experiments for AI/mobile relevance detection
 
 ---
 
