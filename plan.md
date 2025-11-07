@@ -4,7 +4,7 @@
 
 Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identify posts related to AI and mobile development using local Ollama LLM.
 
-## Current Status: 🟡 Phase 2 In Progress
+## Current Status: 🟡 Phase 3 Pending Kickoff
 
 **Last Updated**: 2025-11-07  
 **Current Session**: Phase 1 Setup
@@ -59,7 +59,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Choose RSS parsing library (`rss-parser` or similar)
 - [x] Implement `fetchFeed(url: string)` function
 - [x] Parse feed items: title, description, link, pubDate
-- [ ] Handle both RSS and Atom formats
+- [x] Handle both RSS and Atom formats
 - [x] Add error handling for:
   - Network failures
   - Malformed feeds
@@ -69,14 +69,14 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Load `blogs.json` file
 - [x] Validate JSON structure against `schema_blogs.json`
 - [x] Extract all feed URLs from nested structure
-- [ ] Implement `--max-blogs` parameter to limit feeds processed
+- [x] Implement `--max-blogs` parameter to limit feeds processed
 
 #### 2.3 Tests
 - [x] Test RSS feed parsing with sample feed
 - [x] Test blogs.json loading
 - [x] Test feed URL extraction
 - [x] Test error handling (invalid URLs, network errors)
-- [ ] Test max-blogs parameter
+- [x] Test max-blogs parameter
 
 **Deliverables**: Robust RSS feed parsing with comprehensive tests
 
@@ -288,9 +288,9 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 1. ✅ Create AGENTS.md ← DONE
 2. ✅ Create plan.md ← DONE
-3. 🔄 Continue Phase 2 (RSS feed parsing & blog loading)
-4. Implement CLI wiring for `--max-blogs` and add corresponding tests
-5. Add Atom feed fixture to verify parser coverage
+3. Start Phase 3: sketch Ollama HTTP client with configurable model selection
+4. Define retry/backoff strategy for Ollama calls and outline tests
+5. Prepare prompt design experiments for AI/mobile relevance detection
 
 ---
 
@@ -343,6 +343,21 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 **Next Session**:
 - Expose `--max-blogs` via CLI and cover remaining parameter tests
 - Introduce Atom feed fixtures to ensure parser compatibility
+
+### Session 4: 2025-11-07 - Phase 2 Completion
+**Status**: ✅ Complete
+
+**Completed**:
+- Added Atom feed fixture and extended parser utilities to cover Atom entries
+- Wired CLI `--max-blogs` flag to blog loading pipeline with validation and help output
+- Expanded Vitest suites for CLI argument parsing and Atom feed coverage
+
+**Issues Encountered**:
+- `rss-parser` does not expose Atom subtitle on `description`; opted to validate entry parsing instead of feed subtitle
+
+**Next Session**:
+- Begin Phase 3 by scaffolding the Ollama HTTP client and connection checks
+- Draft retry/backoff approach and corresponding mock-based tests
 
 ---
 

@@ -18,8 +18,16 @@ export class FeedFetchError extends Error {
 const DEFAULT_TIMEOUT_MS = 1000 * 10;
 const DEFAULT_USER_AGENT = "iOS Blogs Analyzer/0.1 (+https://github.com/)";
 
+type ParserLinkObject = {
+  href?: string;
+  rel?: string;
+  [key: string]: unknown;
+};
+
 type ParserItem = Parser.Item & {
   summary?: string;
+  link?: string | ParserLinkObject;
+  links?: ParserLinkObject[];
   [key: string]: unknown;
 };
 
@@ -75,9 +83,15 @@ export async function fetchFeed(url: string, options: FetchFeedOptions = {}): Pr
       .map((item) => mapItemToFeed(item))
       .filter((item): item is FeedItem => item !== null);
 
+    const feedDescription = selectFirstString(
+      parsed.description,
+      (parsed as { subtitle?: unknown }).subtitle,
+      (parsed as Record<string, unknown>)["atom:subtitle"],
+    );
+
     return {
       title: parsed.title ?? undefined,
-      description: parsed.description ?? undefined,
+      description: feedDescription ?? undefined,
       items,
     } satisfies ParsedFeed;
   } catch (error) {
@@ -105,7 +119,7 @@ class AbortSignalController {
 
 function mapItemToFeed(item: ParserItem): FeedItem | null {
   const title = item.title?.trim();
-  const link = item.link?.trim();
+  const link = normalizeLink(item);
 
   if (!title || !link) {
     return null;
@@ -115,10 +129,10 @@ function mapItemToFeed(item: ParserItem): FeedItem | null {
     item.contentSnippet,
     item.content,
     typeof item["content:encoded"] === "string" ? (item["content:encoded"] as string) : undefined,
-    item.summary,
+    typeof item.summary === "string" ? item.summary : undefined,
   );
 
-  const publishedAt = selectFirstString(item.isoDate, item.pubDate);
+  const publishedAt = selectFirstString(item.isoDate, item.updated, item.published, item.pubDate);
 
   return {
     title,
@@ -128,14 +142,66 @@ function mapItemToFeed(item: ParserItem): FeedItem | null {
   } satisfies FeedItem;
 }
 
-function selectFirstString(...values: Array<string | null | undefined>): string | null {
+function selectFirstString(...values: unknown[]): string | null {
   for (const value of values) {
-    if (typeof value === "string") {
-      const trimmed = value.trim();
-      if (trimmed.length > 0) {
-        return trimmed;
+    const candidate = normalizeStringCandidate(value);
+    if (candidate) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function normalizeLink(item: ParserItem): string | null {
+  const candidates: Array<string | undefined> = [];
+
+  if (typeof item.link === "string") {
+    candidates.push(item.link);
+  } else if (item.link && typeof item.link === "object") {
+    const candidate = (item.link as ParserLinkObject).href;
+    if (typeof candidate === "string") {
+      candidates.push(candidate);
+    }
+  }
+
+  if (Array.isArray(item.links)) {
+    for (const link of item.links) {
+      if (link && typeof link === "object" && typeof link.href === "string") {
+        if (!link.rel || link.rel === "alternate") {
+          candidates.push(link.href);
+        }
       }
     }
   }
+
+  for (const candidate of candidates) {
+    const trimmed = typeof candidate === "string" ? candidate.trim() : "";
+    if (trimmed.length > 0) {
+      return trimmed;
+    }
+  }
+
+  return null;
+}
+
+function normalizeStringCandidate(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const candidates = [record._, record.value, record.content];
+    for (const candidate of candidates) {
+      if (typeof candidate === "string") {
+        const trimmed = candidate.trim();
+        if (trimmed.length > 0) {
+          return trimmed;
+        }
+      }
+    }
+  }
+
   return null;
 }

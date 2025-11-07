@@ -1,5 +1,11 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { fetchFeed, FeedFetchError } from "../src/rss-parser.js";
+
+const fixturesDir = path.dirname(fileURLToPath(new URL("./fixtures/atom-sample.xml", import.meta.url)));
+const atomFeedPath = path.join(fixturesDir, "atom-sample.xml");
 
 const SAMPLE_FEED = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
@@ -50,6 +56,26 @@ describe("fetchFeed", () => {
 
     await expect(fetchFeed("https://example.com/missing", { fetcher })).rejects.toMatchObject({
       kind: "http-error",
+    });
+  });
+
+  it("parses an Atom feed and normalises entries", async () => {
+    const atomXml = readFileSync(atomFeedPath, "utf8");
+    const fetcher: typeof fetch = async () =>
+      new Response(atomXml, {
+        status: 200,
+        headers: { "Content-Type": "application/atom+xml" },
+      });
+
+    const feed = await fetchFeed("https://example.com/atom", { fetcher });
+
+    expect(feed.title).toBe("Atom Sample Feed");
+    expect(feed.items).toHaveLength(1);
+    expect(feed.items[0]).toMatchObject({
+      title: "First Atom Entry",
+      link: "https://example.com/atom/first",
+      description: "First Atom entry summary",
+      publishedAt: "2025-11-06T12:34:56.000Z",
     });
   });
 

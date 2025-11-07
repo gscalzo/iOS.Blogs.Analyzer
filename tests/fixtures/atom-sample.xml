@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Atom Sample Feed</title>
+  <subtitle>Example Atom feed for testing</subtitle>
+  <link href="https://example.com/atom" />
+  <updated>2025-11-07T19:00:00Z</updated>
+  <entry>
+    <title>First Atom Entry</title>
+    <link rel="alternate" href="https://example.com/atom/first" />
+    <summary type="html">First Atom entry summary</summary>
+    <updated>2025-11-06T12:34:56Z</updated>
+    <id>tag:example.com,2025:atom-first</id>
+  </entry>
+  <entry>
+    <title>Entry Without Link</title>
+    <summary>Should be ignored because link is missing</summary>
+    <updated>2025-11-05T10:00:00Z</updated>
+    <id>tag:example.com,2025:atom-missing-link</id>
+  </entry>
+</feed>
