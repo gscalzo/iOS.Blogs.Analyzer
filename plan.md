@@ -4,7 +4,7 @@
 
 Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identify posts related to AI and mobile development using local Ollama LLM.
 
-## Current Status: 🟢 Phase 1 Complete
+## Current Status: 🟡 Phase 2 In Progress
 
 **Last Updated**: 2025-11-07  
 **Current Session**: Phase 1 Setup
@@ -56,26 +56,26 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ### Phase 2: RSS Feed Parsing 🔲
 
 #### 2.1 RSS Parser Implementation
-- [ ] Choose RSS parsing library (`rss-parser` or similar)
-- [ ] Implement `fetchFeed(url: string)` function
-- [ ] Parse feed items: title, description, link, pubDate
+- [x] Choose RSS parsing library (`rss-parser` or similar)
+- [x] Implement `fetchFeed(url: string)` function
+- [x] Parse feed items: title, description, link, pubDate
 - [ ] Handle both RSS and Atom formats
-- [ ] Add error handling for:
+- [x] Add error handling for:
   - Network failures
   - Malformed feeds
   - Missing required fields
 
 #### 2.2 Blog Data Loading
-- [ ] Load `blogs.json` file
-- [ ] Validate JSON structure against `schema_blogs.json`
-- [ ] Extract all feed URLs from nested structure
+- [x] Load `blogs.json` file
+- [x] Validate JSON structure against `schema_blogs.json`
+- [x] Extract all feed URLs from nested structure
 - [ ] Implement `--max-blogs` parameter to limit feeds processed
 
 #### 2.3 Tests
-- [ ] Test RSS feed parsing with sample feed
-- [ ] Test blogs.json loading
-- [ ] Test feed URL extraction
-- [ ] Test error handling (invalid URLs, network errors)
+- [x] Test RSS feed parsing with sample feed
+- [x] Test blogs.json loading
+- [x] Test feed URL extraction
+- [x] Test error handling (invalid URLs, network errors)
 - [ ] Test max-blogs parameter
 
 **Deliverables**: Robust RSS feed parsing with comprehensive tests
@@ -288,9 +288,9 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 1. ✅ Create AGENTS.md ← DONE
 2. ✅ Create plan.md ← DONE
-3. ⏭️ **NEXT**: Begin Phase 2 (RSS feed parsing groundwork)
-4. Select RSS parsing library and outline parsing strategy
-5. Draft tests for feed loading and validation
+3. 🔄 Continue Phase 2 (RSS feed parsing & blog loading)
+4. Implement CLI wiring for `--max-blogs` and add corresponding tests
+5. Add Atom feed fixture to verify parser coverage
 
 ---
 
@@ -328,6 +328,21 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Start Phase 2: implement RSS feed loading and validation scaffolding
 - Choose RSS parsing library and add dependency
 - Add initial tests for feed extraction and schema validation
+
+### Session 3: 2025-11-07 - Phase 2 RSS Groundwork
+**Status**: 🔄 In Progress
+
+**Completed**:
+- Selected `rss-parser` and implemented robust `fetchFeed` with timeout, validation, and parsing helpers
+- Added blog directory loader with AJV schema validation plus feed extraction utilities
+- Wrote Vitest suites covering RSS parsing success/error cases and blog data handling fixtures
+
+**Issues Encountered**:
+- Node's native `fetch` bypasses nock; switched tests to custom fetch stubs for deterministic behaviour
+
+**Next Session**:
+- Expose `--max-blogs` via CLI and cover remaining parameter tests
+- Introduce Atom feed fixtures to ensure parser compatibility
 
 ---
 

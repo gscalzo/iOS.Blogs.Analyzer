@@ -1,0 +1,46 @@
+[
+  {
+    "language": "en",
+    "title": "English",
+    "categories": [
+      {
+        "title": "Platform",
+        "slug": "platform",
+        "description": "Platform updates",
+        "sites": [
+          {
+            "title": "Sample Site",
+            "author": "Sample Author",
+            "site_url": "https://sample.example.com",
+            "feed_url": "https://sample.example.com/feed"
+          },
+          {
+            "title": "Secondary Site",
+            "author": "Second Author",
+            "site_url": "https://secondary.example.com",
+            "feed_url": "https://secondary.example.com/rss"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "language": "es",
+    "title": "Spanish",
+    "categories": [
+      {
+        "title": "Noticias",
+        "slug": "noticias",
+        "description": "Noticias de la plataforma",
+        "sites": [
+          {
+            "title": "Sitio Español",
+            "author": "Autor",
+            "site_url": "https://es.example.com",
+            "feed_url": "https://es.example.com/feed"
+          }
+        ]
+      }
+    ]
+  }
+]

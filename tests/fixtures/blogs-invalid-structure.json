@@ -1,0 +1,20 @@
+[
+  {
+    "language": "en",
+    "title": "English",
+    "categories": [
+      {
+        "title": "Platform",
+        "slug": "platform",
+        "description": "Platform updates",
+        "sites": [
+          {
+            "title": "Missing Feed",
+            "author": "Author",
+            "site_url": "https://example.com"
+          }
+        ]
+      }
+    ]
+  }
+]
