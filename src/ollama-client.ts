@@ -37,6 +37,14 @@ interface GenerateResponse {
   response?: string;
 }
 
+export interface AnalysisResult {
+  relevant: boolean;
+  confidence?: number;
+  reason?: string;
+  tags?: string[];
+  rawResponse: string;
+}
+
 export class OllamaConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -48,6 +56,13 @@ export class OllamaRequestError extends Error {
   constructor(message: string, public readonly status: number) {
     super(message);
     this.name = "OllamaRequestError";
+  }
+}
+
+export class OllamaParseError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OllamaParseError";
   }
 }
 
@@ -80,7 +95,7 @@ export class OllamaClient {
     return true;
   }
 
-  async analyzeText(description: string, options: AnalyzeTextOptions = {}): Promise<boolean> {
+  async analyze(description: string, options: AnalyzeTextOptions = {}): Promise<AnalysisResult> {
     if (!description?.trim()) {
       throw new OllamaConfigurationError("Description must be a non-empty string");
     }
@@ -114,7 +129,12 @@ export class OllamaClient {
       throw new OllamaRequestError("Ollama response did not include a decision", response.status);
     }
 
-    return /^yes\b/i.test(answer);
+    return this.parseDecision(answer);
+  }
+
+  async analyzeText(description: string, options: AnalyzeTextOptions = {}): Promise<boolean> {
+    const result = await this.analyze(description, options);
+    return result.relevant;
   }
 
   private resolveFetcher(fetcher?: FetchLike): FetchLike {
@@ -167,11 +187,135 @@ export class OllamaClient {
   private buildPrompt(description: string): string {
     const trimmed = description.trim();
     return [
-      "You are a classifier that decides if a blog post relates to iOS development involving AI or mobile engineering.",
-      "Answer strictly with YES or NO.",
+      "You are an expert iOS engineer helping triage blog posts for AI/mobile relevance.",
+      "Decide if the post focuses on iOS development topics that involve AI/ML, Core ML, vision models, or advanced mobile engineering techniques.",
+      "Respond with a JSON object using this schema strictly:",
+      '{"relevant": boolean, "confidence": number (0-1), "reason": string, "tags": string[]}',
+      "Rules:\n- relevant must be true only when the summary clearly indicates AI/ML or advanced mobile engineering for iOS.\n- confidence should be between 0 and 1.\n- tags must be 1-3 lowercase keywords summarizing the topic.",
+      "Output only the JSON object with no extra commentary.",
       "Blog post summary:",
       trimmed,
     ].join("\n\n");
+  }
+
+  private parseDecision(answer: string): AnalysisResult {
+    const jsonCandidate = this.extractJsonBlock(answer);
+    if (!jsonCandidate) {
+      const fallback = this.parseFallbackDecision(answer);
+      if (fallback) {
+        return fallback;
+      }
+      throw new OllamaParseError("Unable to locate JSON response in Ollama output");
+    }
+
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(jsonCandidate);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown error";
+      throw new OllamaParseError(`Failed to parse Ollama JSON response: ${message}`);
+    }
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new OllamaParseError("Ollama response JSON is not an object");
+    }
+
+    const record = parsed as Record<string, unknown>;
+    const relevant = this.normalizeRelevant(record.relevant ?? record.isRelevant ?? record.relevance ?? record.decision);
+
+    if (typeof relevant !== "boolean") {
+      throw new OllamaParseError("Ollama JSON response did not include a boolean relevance decision");
+    }
+
+    const confidence = this.normalizeConfidence(record.confidence ?? record.score ?? record.probability);
+    const reason = this.normalizeReason(record.reason ?? record.explanation ?? record.summary);
+    const tags = this.normalizeTags(record.tags ?? record.labels ?? record.topics);
+
+    return {
+      relevant,
+      confidence,
+      reason,
+      tags,
+      rawResponse: answer,
+    };
+  }
+
+  private extractJsonBlock(answer: string): string | undefined {
+    const start = answer.indexOf("{");
+    const end = answer.lastIndexOf("}");
+
+    if (start === -1 || end === -1 || end <= start) {
+      return undefined;
+    }
+
+    return answer.slice(start, end + 1);
+  }
+
+  private parseFallbackDecision(answer: string): AnalysisResult | undefined {
+    const yes = /^\s*yes\b/i.test(answer);
+    const no = /^\s*no\b/i.test(answer);
+
+    if (!yes && !no) {
+      return undefined;
+    }
+
+    return {
+      relevant: yes,
+      confidence: undefined,
+      reason: undefined,
+      tags: undefined,
+      rawResponse: answer,
+    };
+  }
+
+  private normalizeRelevant(value: unknown): boolean | undefined {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      if (/^yes\b/i.test(value)) {
+        return true;
+      }
+
+      if (/^no\b/i.test(value)) {
+        return false;
+      }
+    }
+
+    return undefined;
+  }
+
+  private normalizeConfidence(value: unknown): number | undefined {
+    if (typeof value !== "number" || Number.isNaN(value)) {
+      return undefined;
+    }
+
+    const clamped = Math.max(0, Math.min(1, value));
+    return clamped;
+  }
+
+  private normalizeReason(value: unknown): string | undefined {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  private normalizeTags(value: unknown): string[] | undefined {
+    if (!Array.isArray(value)) {
+      return undefined;
+    }
+
+    const tags = value
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim().toLowerCase())
+      .filter((item) => item.length > 0);
+
+    return tags.length > 0 ? tags.slice(0, 3) : undefined;
   }
 }
 

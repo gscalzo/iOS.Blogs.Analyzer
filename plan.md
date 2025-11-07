@@ -7,7 +7,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ## Current Status: 🟡 Phase 3 In Progress
 
 **Last Updated**: 2025-11-07  
-**Current Session**: Phase 3 Ollama Client
+**Current Session**: Phase 3 Prompt Engineering
 
 ---
 
@@ -92,10 +92,10 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Implement connection checking
 
 #### 3.2 Prompt Engineering
-- [ ] Design prompt for AI/mobile development detection
-- [ ] Test prompt with various blog post descriptions
-- [ ] Optimize for accuracy and speed
-- [ ] Handle Ollama response parsing
+- [x] Design prompt for AI/mobile development detection
+- [x] Test prompt with various blog post descriptions
+- [x] Optimize for accuracy and speed
+- [x] Handle Ollama response parsing
 
 #### 3.3 Error Handling & Retry Logic
 - [ ] Detect Ollama connection failures
@@ -289,8 +289,9 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 1. ✅ Create AGENTS.md ← DONE
 2. ✅ Create plan.md ← DONE
 3. ✅ Start Phase 3: sketch Ollama HTTP client with configurable model selection
-4. Define retry/backoff strategy for Ollama calls and outline tests
-5. Prepare prompt design experiments for AI/mobile relevance detection
+4. 🔄 Define retry/backoff strategy for Ollama calls and outline tests
+5. ✅ Prepare prompt design experiments for AI/mobile relevance detection
+6. Draft plan for integrating retry/backoff logic with configurable limits
 
 ---
 
@@ -372,6 +373,21 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 **Next Session**:
 - Define retry/backoff strategy and add associated tests
 - Begin prompt design experiments for AI/mobile relevance detection
+
+### Session 6: 2025-11-07 - Phase 3 Prompt Engineering
+**Status**: ✅ Complete
+
+**Completed**:
+- Refined Ollama prompt to emit structured JSON with relevance, confidence, reason, and tags
+- Added JSON parsing with robust normalization/fallback handling in `OllamaClient`
+- Expanded Vitest coverage for positive, negative, fallback, and error parsing scenarios
+
+**Issues Encountered**:
+- None
+
+**Next Session**:
+- Define and implement retry/backoff strategy with accompanying mocks/tests
+- Add timeout handling and graceful degradation paths for unavailable Ollama
 
 ---
 
