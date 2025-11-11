@@ -35,7 +35,7 @@ describe("analyzeFeeds", () => {
 
   it("emits progress updates for successes and failures", async () => {
     const feeds = ["feed-ok", "feed-fail", "feed-late"];
-    const progress: Array<{ feedUrl: string; completed: number; status: string; error?: string }> = [];
+    const progress: Array<{ feedUrl: string; completed: number; status: string; error?: string; duration?: number }> = [];
 
     const dependencies = {
       fetchFeed: async (feedUrl: string): Promise<ParsedFeed> => {
@@ -58,8 +58,10 @@ describe("analyzeFeeds", () => {
           completed: update.completed,
           status: update.status,
           error: update.error?.message,
+          duration: update.durationMs,
         });
       },
+      clock: () => Date.now(),
     });
 
     expect(progress).toHaveLength(feeds.length);
@@ -67,8 +69,10 @@ describe("analyzeFeeds", () => {
     const failedEntry = progress.find((entry) => entry.feedUrl === "feed-fail");
     expect(failedEntry?.status).toBe("rejected");
     expect(failedEntry?.error).toBe("boom");
+    expect(progress.every((entry) => typeof entry.duration === "number" || entry.status === "rejected" || entry.duration === undefined)).toBe(true);
 
     const summary = summarize(results);
+    expect(results.filter((item) => item.status === "fulfilled").every((item) => typeof item.durationMs === "number")).toBe(true);
     expect(summary.fulfilled).toHaveLength(2);
     expect(summary.rejected).toHaveLength(1);
     expect(summary.rejected[0].feedUrl).toBe("feed-fail");

@@ -83,12 +83,14 @@ describe("main", () => {
         completed: 1,
         total: 1,
         status: "fulfilled",
+        durationMs: 1200,
       });
       return [
         {
           feedUrl: "https://example.com/feed",
           status: "fulfilled",
           feed: { title: "Example", items: [] },
+          durationMs: 1200,
         },
       ];
     });
@@ -110,7 +112,7 @@ describe("main", () => {
     const stdoutText = stdout.messages.join("");
     expect(stdoutText).toContain("Loaded 1 feed URLs.");
     expect(stdoutText).toMatch(/\[1\/1\] OK https:\/\/example.com\/feed/);
-    expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed/);
+    expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed in 00:00 avg 1.2s/);
     expect(stderr.messages).toHaveLength(0);
     expect(process.exitCode).toBe(0);
   });
@@ -119,7 +121,7 @@ describe("main", () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
     mockedAnalyzeFeeds.mockResolvedValue([
-      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] } },
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 500 },
     ]);
 
     const stdout = createWriter();
@@ -147,7 +149,7 @@ describe("main", () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
     mockedAnalyzeFeeds.mockResolvedValue([
-      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] } },
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 400 },
     ]);
 
     const stdout = createWriter();
@@ -172,9 +174,10 @@ describe("main", () => {
         total: 1,
         status: "rejected",
         error,
+        durationMs: 0,
       });
       return [
-        { feedUrl: "https://example.com/feed", status: "rejected", error },
+        { feedUrl: "https://example.com/feed", status: "rejected", error, durationMs: 0 },
       ];
     });
 

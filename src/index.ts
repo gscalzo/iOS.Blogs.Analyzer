@@ -112,20 +112,49 @@ function estimateRemainingMs(completed: number, total: number, elapsedMs: number
   return Math.round(remaining / ratePerMs);
 }
 
-function summarize(results: FeedAnalysisResult[]): { succeeded: FeedAnalysisResult[]; failed: FeedAnalysisResult[] } {
+function summarize(results: FeedAnalysisResult[]): {
+  succeeded: FeedAnalysisResult[];
+  failed: FeedAnalysisResult[];
+  averageDurationMs?: number;
+} {
   const succeeded: FeedAnalysisResult[] = [];
   const failed: FeedAnalysisResult[] = [];
+  const durations: number[] = [];
 
   for (const result of results) {
     if (result.status === "fulfilled") {
       succeeded.push(result);
+      if (typeof result.durationMs === "number" && Number.isFinite(result.durationMs)) {
+        durations.push(result.durationMs);
+      }
       continue;
     }
 
     failed.push(result);
   }
 
-  return { succeeded, failed };
+  const averageDurationMs = durations.length > 0 ? durations.reduce((sum, value) => sum + value, 0) / durations.length : undefined;
+
+  return { succeeded, failed, averageDurationMs };
+}
+
+function formatShortDuration(milliseconds: number): string {
+  if (!Number.isFinite(milliseconds)) {
+    return "--";
+  }
+
+  if (milliseconds < 1000) {
+    return `${Math.round(milliseconds)}ms`;
+  }
+
+  if (milliseconds < 60_000) {
+    const seconds = milliseconds / 1000;
+    return `${seconds.toFixed(seconds >= 10 ? 0 : 1)}s`;
+  }
+
+  const minutes = Math.floor(milliseconds / 60_000);
+  const seconds = Math.round((milliseconds % 60_000) / 1000);
+  return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
 export async function main(options: MainOptions = {}): Promise<void> {
@@ -186,12 +215,14 @@ export async function main(options: MainOptions = {}): Promise<void> {
 
         stdout.write(`${parts.join(" ")}\n`);
       },
+      clock: now,
     });
 
     const elapsedMs = now() - startedAt;
-    const { succeeded, failed } = summarize(results);
+    const { succeeded, failed, averageDurationMs } = summarize(results);
+    const averageText = averageDurationMs !== undefined ? ` avg ${formatShortDuration(averageDurationMs)}` : "";
     stdout.write(
-      `Finished ${total} feeds: ${succeeded.length} succeeded, ${failed.length} failed in ${formatDuration(elapsedMs)}.\n`,
+      `Finished ${total} feeds: ${succeeded.length} succeeded, ${failed.length} failed in ${formatDuration(elapsedMs)}${averageText}.\n`,
     );
 
     if (failed.length > 0) {

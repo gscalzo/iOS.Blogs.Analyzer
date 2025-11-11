@@ -9,6 +9,7 @@ export interface FeedAnalysisResult {
   status: "fulfilled" | "rejected";
   feed?: ParsedFeed;
   error?: Error;
+  durationMs?: number;
 }
 
 export interface ProgressUpdate {
@@ -18,6 +19,7 @@ export interface ProgressUpdate {
   status: FeedAnalysisResult["status"];
   feed?: ParsedFeed;
   error?: Error;
+  durationMs?: number;
 }
 
 export interface AnalyzerDependencies {
@@ -34,6 +36,7 @@ export interface AnalyzeFeedsOptions {
   fetchOptions?: FetchFeedOptions;
   onProgress?: (update: ProgressUpdate) => void;
   dependencies?: Partial<AnalyzerDependencies>;
+  clock?: () => number;
 }
 
 export async function analyzeFeeds(feedUrls: readonly string[], options: AnalyzeFeedsOptions = {}): Promise<FeedAnalysisResult[]> {
@@ -52,6 +55,8 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
     ...options.dependencies,
   };
 
+  const clock = options.clock ?? (() => Date.now());
+
   const total = feedUrls.length;
   let completed = 0;
 
@@ -59,6 +64,7 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
     feedUrls,
     async (feedUrl) => {
       const result: FeedAnalysisResult = { feedUrl, status: "fulfilled" };
+      const startedAt = clock();
 
       try {
         result.feed = await dependencies.fetchFeed(feedUrl, {
@@ -67,6 +73,12 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
       } catch (error) {
         result.status = "rejected";
         result.error = error instanceof Error ? error : new Error(String(error));
+      } finally {
+        const finishedAt = clock();
+        if (Number.isFinite(finishedAt) && Number.isFinite(startedAt)) {
+          const duration = finishedAt - startedAt;
+          result.durationMs = Number.isFinite(duration) ? Math.max(0, duration) : undefined;
+        }
       }
 
       completed += 1;
@@ -77,6 +89,7 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
         status: result.status,
         feed: result.feed,
         error: result.error,
+        durationMs: result.durationMs,
       });
 
       return result;
