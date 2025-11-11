@@ -11,6 +11,7 @@ export interface MainOptions {
   argv?: string[];
   stdout?: { write(message: string): unknown };
   stderr?: { write(message: string): unknown };
+  now?: () => number;
 }
 
 class CliError extends Error {
@@ -132,6 +133,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
     argv = process.argv.slice(2),
     stdout = process.stdout,
     stderr = process.stderr,
+    now = () => Date.now(),
   } = options;
 
   let cliArguments: CliArguments;
@@ -161,13 +163,13 @@ export async function main(options: MainOptions = {}): Promise<void> {
     }
 
     const total = feeds.length;
-    const startedAt = Date.now();
+    const startedAt = now();
     stdout.write(`Processing with up to ${cliArguments.parallel ?? DEFAULT_PARALLEL} concurrent requests...\n`);
 
     const results = await analyzeFeeds(feeds, {
       parallel: cliArguments.parallel ?? DEFAULT_PARALLEL,
       onProgress(update) {
-        const elapsedMs = Date.now() - startedAt;
+        const elapsedMs = now() - startedAt;
         const etaMs = estimateRemainingMs(update.completed, update.total, elapsedMs);
         const etaText = etaMs === undefined ? "--" : formatDuration(etaMs);
         const statusLabel = update.status === "fulfilled" ? "ok" : "error";
@@ -186,7 +188,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
       },
     });
 
-    const elapsedMs = Date.now() - startedAt;
+    const elapsedMs = now() - startedAt;
     const { succeeded, failed } = summarize(results);
     stdout.write(
       `Finished ${total} feeds: ${succeeded.length} succeeded, ${failed.length} failed in ${formatDuration(elapsedMs)}.\n`,

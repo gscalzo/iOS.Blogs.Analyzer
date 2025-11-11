@@ -96,7 +96,10 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer });
+    let currentTime = 0;
+    const now = () => currentTime;
+
+    await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer, now });
 
     expect(mockedLoadBlogs).toHaveBeenCalledTimes(1);
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: undefined });
@@ -150,7 +153,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer });
+    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer, now: () => 0 });
 
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       expect.any(Array),
@@ -178,7 +181,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer });
+    await main({ stdout: stdout.writer, stderr: stderr.writer, now: () => 0 });
 
     expect(stdout.messages.join("")).toMatch(/Finished 1 feeds: 0 succeeded, 1 failed/);
     expect(stderr.messages.join("")).toContain("boom");
