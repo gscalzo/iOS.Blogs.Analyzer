@@ -35,7 +35,7 @@ describe("analyzeFeeds", () => {
 
   it("emits progress updates for successes and failures", async () => {
     const feeds = ["feed-ok", "feed-fail", "feed-late"];
-    const progress: Array<{ feedUrl: string; completed: number; status: string }> = [];
+    const progress: Array<{ feedUrl: string; completed: number; status: string; error?: string }> = [];
 
     const dependencies = {
       fetchFeed: async (feedUrl: string): Promise<ParsedFeed> => {
@@ -53,13 +53,20 @@ describe("analyzeFeeds", () => {
       parallel: 2,
       dependencies,
       onProgress(update) {
-        progress.push({ feedUrl: update.feedUrl, completed: update.completed, status: update.status });
+        progress.push({
+          feedUrl: update.feedUrl,
+          completed: update.completed,
+          status: update.status,
+          error: update.error?.message,
+        });
       },
     });
 
     expect(progress).toHaveLength(feeds.length);
     expect(progress[progress.length - 1].completed).toBe(feeds.length);
-    expect(progress.find((entry) => entry.feedUrl === "feed-fail")?.status).toBe("rejected");
+    const failedEntry = progress.find((entry) => entry.feedUrl === "feed-fail");
+    expect(failedEntry?.status).toBe("rejected");
+    expect(failedEntry?.error).toBe("boom");
 
     const summary = summarize(results);
     expect(summary.fulfilled).toHaveLength(2);

@@ -16,6 +16,8 @@ export interface ProgressUpdate {
   completed: number;
   total: number;
   status: FeedAnalysisResult["status"];
+  feed?: ParsedFeed;
+  error?: Error;
 }
 
 export interface AnalyzerDependencies {
@@ -73,6 +75,8 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
         completed,
         total,
         status: result.status,
+        feed: result.feed,
+        error: result.error,
       });
 
       return result;

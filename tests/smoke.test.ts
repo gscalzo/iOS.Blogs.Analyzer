@@ -2,11 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { main, parseArguments } from "../src/index.js";
 import type { BlogsDirectory } from "../src/types.js";
 import { extractFeedUrls, loadBlogs } from "../src/blogs.js";
+import { analyzeFeeds, DEFAULT_PARALLEL } from "../src/analyzer.js";
 
 vi.mock("../src/blogs.js");
+vi.mock("../src/analyzer.js");
 
 const mockedLoadBlogs = vi.mocked(loadBlogs);
 const mockedExtractFeedUrls = vi.mocked(extractFeedUrls);
+const mockedAnalyzeFeeds = vi.mocked(analyzeFeeds);
 
 function createWriter() {
   const messages: string[] = [];
@@ -71,9 +74,24 @@ describe("main", () => {
     process.exitCode = 0;
   });
 
-  it("loads blogs and writes feed count", async () => {
+  it("loads blogs, processes feeds, and prints progress", async () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockImplementation(async (_feeds, options) => {
+      options?.onProgress?.({
+        feedUrl: "https://example.com/feed",
+        completed: 1,
+        total: 1,
+        status: "fulfilled",
+      });
+      return [
+        {
+          feedUrl: "https://example.com/feed",
+          status: "fulfilled",
+          feed: { title: "Example", items: [] },
+        },
+      ];
+    });
 
     const stdout = createWriter();
     const stderr = createWriter();
@@ -82,7 +100,14 @@ describe("main", () => {
 
     expect(mockedLoadBlogs).toHaveBeenCalledTimes(1);
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: undefined });
-    expect(stdout.messages.join("")).toContain("Loaded 1 feed URLs.");
+    expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
+      ["https://example.com/feed"],
+      expect.objectContaining({ parallel: DEFAULT_PARALLEL }),
+    );
+    const stdoutText = stdout.messages.join("");
+    expect(stdoutText).toContain("Loaded 1 feed URLs.");
+    expect(stdoutText).toMatch(/\[1\/1\] OK https:\/\/example.com\/feed/);
+    expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed/);
     expect(stderr.messages).toHaveLength(0);
     expect(process.exitCode).toBe(0);
   });
@@ -90,6 +115,9 @@ describe("main", () => {
   it("respects --max-blogs argument", async () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] } },
+    ]);
 
     const stdout = createWriter();
     const stderr = createWriter();
@@ -97,6 +125,7 @@ describe("main", () => {
     await main({ argv: ["--max-blogs", "1"], stdout: stdout.writer, stderr: stderr.writer });
 
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: 1 });
+    expect(mockedAnalyzeFeeds).toHaveBeenCalled();
   });
 
   it("reports invalid --max-blogs values", async () => {
@@ -109,6 +138,64 @@ describe("main", () => {
     expect(mockedExtractFeedUrls).not.toHaveBeenCalled();
     expect(stderr.messages.join("")).toMatch(/--max-blogs must be a non-negative integer/);
     expect(process.exitCode).toBe(1);
+  });
+
+  it("allows overriding parallelism", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] } },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer });
+
+    expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ parallel: 5 }),
+    );
+  });
+
+  it("prints failures and sets exit code", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockImplementation(async (_feeds, options) => {
+      const error = new Error("boom");
+      options?.onProgress?.({
+        feedUrl: "https://example.com/feed",
+        completed: 1,
+        total: 1,
+        status: "rejected",
+        error,
+      });
+      return [
+        { feedUrl: "https://example.com/feed", status: "rejected", error },
+      ];
+    });
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ stdout: stdout.writer, stderr: stderr.writer });
+
+    expect(stdout.messages.join("")).toMatch(/Finished 1 feeds: 0 succeeded, 1 failed/);
+    expect(stderr.messages.join("")).toContain("boom");
+    expect(process.exitCode).toBe(1);
+  });
+
+  it("short-circuits when no feeds are available", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue([]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ stdout: stdout.writer, stderr: stderr.writer });
+
+    expect(stdout.messages.join("")).toContain("No feeds to process");
+    expect(mockedAnalyzeFeeds).not.toHaveBeenCalled();
   });
 
   it("shows help when requested", async () => {
