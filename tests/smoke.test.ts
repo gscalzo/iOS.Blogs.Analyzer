@@ -48,12 +48,20 @@ describe("parseArguments", () => {
     expect(parseArguments(["--max-blogs", "2"])).toEqual({ maxBlogs: 2 });
   });
 
+  it("parses --parallel when provided", () => {
+    expect(parseArguments(["--parallel", "4"])).toEqual({ parallel: 4 });
+  });
+
   it("marks help flag", () => {
     expect(parseArguments(["--help"])).toEqual({ helpRequested: true });
   });
 
   it("throws on unknown flags", () => {
     expect(() => parseArguments(["--unknown"])).toThrow(/Unknown argument/);
+  });
+
+  it("rejects invalid --parallel values", () => {
+    expect(() => parseArguments(["--parallel", "0"])).toThrow(/--parallel must be a positive integer/);
   });
 });
 

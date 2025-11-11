@@ -1,5 +1,84 @@
-// Placeholder analyzer module; will orchestrate feed analysis in future phases.
+import { fetchFeed as defaultFetchFeed } from "./rss-parser.js";
+import type { FetchFeedOptions, ParsedFeed } from "./types.js";
+import { asyncPool } from "./utils.js";
 
-export function analyzePlaceholder(): void {
-  // Intentionally empty for now.
+export const DEFAULT_PARALLEL = 3;
+
+export interface FeedAnalysisResult {
+  feedUrl: string;
+  status: "fulfilled" | "rejected";
+  feed?: ParsedFeed;
+  error?: Error;
+}
+
+export interface ProgressUpdate {
+  feedUrl: string;
+  completed: number;
+  total: number;
+  status: FeedAnalysisResult["status"];
+}
+
+export interface AnalyzerDependencies {
+  fetchFeed: typeof defaultFetchFeed;
+}
+
+const defaultDependencies: AnalyzerDependencies = {
+  fetchFeed: defaultFetchFeed,
+};
+
+export interface AnalyzeFeedsOptions {
+  parallel?: number;
+  signal?: AbortSignal;
+  fetchOptions?: FetchFeedOptions;
+  onProgress?: (update: ProgressUpdate) => void;
+  dependencies?: Partial<AnalyzerDependencies>;
+}
+
+export async function analyzeFeeds(feedUrls: readonly string[], options: AnalyzeFeedsOptions = {}): Promise<FeedAnalysisResult[]> {
+  if (!Array.isArray(feedUrls)) {
+    throw new TypeError("feedUrls must be an array");
+  }
+
+  const parallel = options.parallel ?? DEFAULT_PARALLEL;
+
+  if (!Number.isInteger(parallel) || parallel <= 0) {
+    throw new RangeError("parallel must be a positive integer");
+  }
+
+  const dependencies: AnalyzerDependencies = {
+    ...defaultDependencies,
+    ...options.dependencies,
+  };
+
+  const total = feedUrls.length;
+  let completed = 0;
+
+  const results = await asyncPool(
+    feedUrls,
+    async (feedUrl) => {
+      const result: FeedAnalysisResult = { feedUrl, status: "fulfilled" };
+
+      try {
+        result.feed = await dependencies.fetchFeed(feedUrl, {
+          ...options.fetchOptions,
+        });
+      } catch (error) {
+        result.status = "rejected";
+        result.error = error instanceof Error ? error : new Error(String(error));
+      }
+
+      completed += 1;
+      options.onProgress?.({
+        feedUrl,
+        completed,
+        total,
+        status: result.status,
+      });
+
+      return result;
+    },
+    { concurrency: parallel, signal: options.signal },
+  );
+
+  return results;
 }

@@ -3,6 +3,7 @@ import { extractFeedUrls, loadBlogs } from "./blogs.js";
 export interface CliArguments {
   maxBlogs?: number;
   helpRequested?: boolean;
+  parallel?: number;
 }
 
 export interface MainOptions {
@@ -46,6 +47,23 @@ export function parseArguments(argv: string[]): CliArguments {
       continue;
     }
 
+    if (token === "--parallel" || token.startsWith("--parallel=")) {
+      const value = token === "--parallel" ? argv[++index] : token.slice("--parallel=".length);
+
+      if (!value) {
+        throw new CliError("Missing value for --parallel");
+      }
+
+      const parsed = Number.parseInt(value, 10);
+
+      if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
+        throw new CliError("--parallel must be a positive integer");
+      }
+
+      result.parallel = parsed;
+      continue;
+    }
+
     throw new CliError(`Unknown argument: ${token}`);
   }
 
@@ -61,6 +79,7 @@ function renderHelp(): string {
     "",
     "Options:",
     "  --max-blogs <number>   Limit the number of feeds processed",
+    "  --parallel <number>    Maximum concurrent requests (default: 3)",
     "  -h, --help              Show this help message",
     "",
   ].join("\n");
