@@ -4,10 +4,10 @@
 
 Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identify posts related to AI and mobile development using local Ollama LLM.
 
-## Current Status: 🟡 Phase 4 In Progress
+## Current Status: 🟡 Phase 5 In Progress
 
-**Last Updated**: 2025-11-11  
-**Current Session**: Phase 4 Progress Tracking
+**Last Updated**: 2025-11-12  
+**Current Session**: Phase 5 Argument Parsing
 
 ---
 
@@ -140,14 +140,14 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ### Phase 5: CLI Interface 🔲
 
 #### 5.1 Argument Parsing
-- [ ] Implement CLI argument parser (yargs or commander)
-- [ ] Arguments:
+- [x] Implement CLI argument parser (yargs or commander)
+- [x] Arguments:
   - `--parallel <N>` - Number of concurrent requests (default: 3)
   - `--max-blogs <N>` - Maximum blogs to check (optional, for testing)
   - `--model <name>` - Ollama model to use (default: llama3.1)
   - `--output <file>` - Output file for results (default: stdout)
   - `--verbose` - Verbose logging
-- [ ] Display help with `--help`
+- [x] Display help with `--help`
 
 #### 5.2 Output Formatting
 - [ ] Format results clearly:
@@ -297,6 +297,8 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 9. Evaluate performance characteristics across feed sizes (Phase 4.3)
 10. Plan integration of Ollama analysis results into progress stream
 11. Prototype end-to-end integration wiring feeds, Ollama analysis, and output pipeline
+12. Implement CLI output formatting and export modes (Phase 5.2)
+13. Add CLI argument parsing tests across combinations (Phase 5.3)
 
 ---
 
@@ -473,6 +475,22 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 **Next Session**:
 - Resume benchmarking parallelism defaults and planning relevance integration once runtime remains stable
+
+### Session 12: 2025-11-12 - Phase 5 Argument Parser
+**Status**: ✅ Complete
+
+**Completed**:
+- Added yargs-based CLI parser with support for model/output/verbose flags and strict validation
+- Updated help output and ensured Ollama model overrides propagate via environment
+- Expanded smoke tests to cover new options and URL normalization fixtures
+- Installed `@types/yargs` for typed builds and verified `npm run build` success
+
+**Issues Encountered**:
+- yargs strict parsing required manual handling of `--help` to avoid argument errors
+- TypeScript builds initially failed due to missing yargs type declarations
+
+**Next Session**:
+- Implement CLI output formatting options and hook verbose/output flags into runtime behaviour
 
 ---
 

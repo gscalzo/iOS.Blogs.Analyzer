@@ -55,16 +55,32 @@ describe("parseArguments", () => {
     expect(parseArguments(["--parallel", "4"])).toEqual({ parallel: 4 });
   });
 
+  it("parses model and trims value", () => {
+    expect(parseArguments(["--model", " qwq "])).toEqual({ model: "qwq" });
+  });
+
+  it("parses output and verbose flags", () => {
+    expect(parseArguments(["--output", "results.json", "--verbose"])).toEqual({ output: "results.json", verbose: true });
+  });
+
   it("marks help flag", () => {
     expect(parseArguments(["--help"])).toEqual({ helpRequested: true });
   });
 
   it("throws on unknown flags", () => {
-    expect(() => parseArguments(["--unknown"])).toThrow(/Unknown argument/);
+    expect(() => parseArguments(["--unknown"])).toThrow(/Unknown/);
   });
 
   it("rejects invalid --parallel values", () => {
     expect(() => parseArguments(["--parallel", "0"])).toThrow(/--parallel must be a positive integer/);
+  });
+
+  it("rejects empty model values", () => {
+    expect(() => parseArguments(["--model", " "])).toThrow(/--model must be a non-empty string/);
+  });
+
+  it("rejects empty output values", () => {
+    expect(() => parseArguments(["--output", " "])).toThrow(/--output must be a non-empty string/);
   });
 });
 
@@ -101,7 +117,7 @@ describe("main", () => {
     let currentTime = 0;
     const now = () => currentTime;
 
-    await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer, now });
+    await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
 
     expect(mockedLoadBlogs).toHaveBeenCalledTimes(1);
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: undefined });
@@ -127,7 +143,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--max-blogs", "1"], stdout: stdout.writer, stderr: stderr.writer });
+    await main({ argv: ["--max-blogs", "1"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: 1 });
     expect(mockedAnalyzeFeeds).toHaveBeenCalled();
@@ -137,7 +153,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--max-blogs", "nope"], stdout: stdout.writer, stderr: stderr.writer });
+    await main({ argv: ["--max-blogs", "nope"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
     expect(mockedExtractFeedUrls).not.toHaveBeenCalled();
@@ -155,7 +171,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer, now: () => 0 });
+    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
 
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       expect.any(Array),
@@ -184,7 +200,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer, now: () => 0 });
+    await main({ stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
 
     expect(stdout.messages.join("")).toMatch(/Finished 1 feeds: 0 succeeded, 1 failed/);
     expect(stderr.messages.join("")).toContain("boom");
@@ -198,7 +214,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer });
+    await main({ stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(stdout.messages.join("")).toContain("No feeds to process");
     expect(mockedAnalyzeFeeds).not.toHaveBeenCalled();
@@ -207,9 +223,24 @@ describe("main", () => {
   it("shows help when requested", async () => {
     const stdout = createWriter();
 
-    await main({ argv: ["--help"], stdout: stdout.writer });
+    await main({ argv: ["--help"], stdout: stdout.writer, env: {} });
 
     expect(stdout.messages.join("")).toMatch(/Usage/);
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
+  });
+
+  it("overrides Ollama model via CLI", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 400 },
+    ]);
+
+    const stdout = createWriter();
+    const env: NodeJS.ProcessEnv = {};
+
+    await main({ argv: ["--model", "qwq"], stdout: stdout.writer, stderr: createWriter().writer, env });
+
+    expect(env.IOS_BLOGS_ANALYZER_MODEL).toBe("qwq");
   });
 });

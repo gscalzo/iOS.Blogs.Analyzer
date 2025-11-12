@@ -1,3 +1,4 @@
+import yargs, { type ArgumentsCamelCase } from "yargs";
 import { extractFeedUrls, loadBlogs } from "./blogs.js";
 import { analyzeFeeds, DEFAULT_PARALLEL, type FeedAnalysisResult } from "./analyzer.js";
 
@@ -5,6 +6,9 @@ export interface CliArguments {
   maxBlogs?: number;
   helpRequested?: boolean;
   parallel?: number;
+  model?: string;
+  output?: string;
+  verbose?: boolean;
 }
 
 export interface MainOptions {
@@ -12,7 +16,10 @@ export interface MainOptions {
   stdout?: { write(message: string): unknown };
   stderr?: { write(message: string): unknown };
   now?: () => number;
+  env?: NodeJS.ProcessEnv;
 }
+
+const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
 
 class CliError extends Error {
   public readonly exitCode: number;
@@ -25,51 +32,108 @@ class CliError extends Error {
 }
 
 export function parseArguments(argv: string[]): CliArguments {
+  const filteredArgv: string[] = [];
+  let helpRequested = false;
+
+  for (const token of argv) {
+    if (token === "--help" || token === "-h") {
+      helpRequested = true;
+      continue;
+    }
+    filteredArgv.push(token);
+  }
+
+  type ParsedShape = {
+    help?: boolean;
+    maxBlogs?: number;
+    parallel?: number;
+    model?: string;
+    output?: string;
+    verbose?: boolean;
+  };
+
+  const parser = yargs(filteredArgv)
+    .parserConfiguration({
+      "camel-case-expansion": true,
+      "dot-notation": false,
+      "duplicate-arguments-array": false,
+      "flatten-duplicate-arrays": true,
+    })
+    .option("max-blogs", {
+      type: "number",
+      describe: "Limit the number of feeds processed",
+    })
+    .option("parallel", {
+      type: "number",
+      describe: "Maximum concurrent requests",
+    })
+    .option("model", {
+      type: "string",
+      describe: "Ollama model to use",
+    })
+    .option("output", {
+      type: "string",
+      describe: "Write results to the specified file",
+    })
+    .option("verbose", {
+      type: "boolean",
+      describe: "Enable verbose logging",
+    })
+    .exitProcess(false)
+    .help(false)
+    .showHelpOnFail(false)
+    .version(false)
+    .strict();
+
+  let parsed: ArgumentsCamelCase<ParsedShape>;
+
+  try {
+    parsed = parser.parseSync();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Invalid CLI arguments";
+    throw new CliError(message);
+  }
+
   const result: CliArguments = {};
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
+  if (helpRequested || parsed.help) {
+    result.helpRequested = true;
+  }
 
-    if (token === "--help" || token === "-h") {
-      result.helpRequested = true;
-      continue;
+  if (parsed.maxBlogs !== undefined) {
+    const value = parsed.maxBlogs;
+    if (!Number.isFinite(value) || !Number.isInteger(value) || value < 0) {
+      throw new CliError("--max-blogs must be a non-negative integer");
     }
+    result.maxBlogs = value;
+  }
 
-    if (token === "--max-blogs" || token.startsWith("--max-blogs=")) {
-      const value = token === "--max-blogs" ? argv[++index] : token.slice("--max-blogs=".length);
-
-      if (!value) {
-        throw new CliError("Missing value for --max-blogs");
-      }
-
-      const parsed = Number.parseInt(value, 10);
-
-      if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
-        throw new CliError("--max-blogs must be a non-negative integer");
-      }
-
-      result.maxBlogs = parsed;
-      continue;
+  if (parsed.parallel !== undefined) {
+    const value = parsed.parallel;
+    if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+      throw new CliError("--parallel must be a positive integer");
     }
+    result.parallel = value;
+  }
 
-    if (token === "--parallel" || token.startsWith("--parallel=")) {
-      const value = token === "--parallel" ? argv[++index] : token.slice("--parallel=".length);
-
-      if (!value) {
-        throw new CliError("Missing value for --parallel");
-      }
-
-      const parsed = Number.parseInt(value, 10);
-
-      if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed <= 0) {
-        throw new CliError("--parallel must be a positive integer");
-      }
-
-      result.parallel = parsed;
-      continue;
+  if (typeof parsed.model === "string") {
+    const trimmed = parsed.model.trim();
+    if (trimmed.length === 0) {
+      throw new CliError("--model must be a non-empty string");
     }
+    result.model = trimmed;
+  }
 
-    throw new CliError(`Unknown argument: ${token}`);
+  if (typeof parsed.output === "string") {
+    const trimmed = parsed.output.trim();
+    if (trimmed.length === 0) {
+      throw new CliError("--output must be a non-empty string");
+    }
+    result.output = trimmed;
+  }
+
+  if (typeof parsed.verbose === "boolean") {
+    result.verbose = parsed.verbose;
   }
 
   return result;
@@ -85,6 +149,9 @@ function renderHelp(): string {
     "Options:",
     "  --max-blogs <number>   Limit the number of feeds processed",
     "  --parallel <number>    Maximum concurrent requests (default: 3)",
+    "  --model <name>         Ollama model to use (default: llama3.1)",
+    "  --output <file>        Write results to a file instead of stdout",
+    "  --verbose              Enable verbose logging",
     "  -h, --help              Show this help message",
     "",
   ].join("\n");
@@ -166,6 +233,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
     stdout = process.stdout,
     stderr = process.stderr,
     now = () => Date.now(),
+    env = process.env,
   } = options;
 
   let cliArguments: CliArguments;
@@ -182,6 +250,10 @@ export async function main(options: MainOptions = {}): Promise<void> {
   if (cliArguments.helpRequested) {
     stdout.write(`${renderHelp()}`);
     return;
+  }
+
+  if (cliArguments.model) {
+    env[MODEL_ENV_VARIABLE] = cliArguments.model;
   }
 
   try {
