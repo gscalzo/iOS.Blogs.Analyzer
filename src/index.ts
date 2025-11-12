@@ -15,9 +15,12 @@ export interface MainOptions {
 }
 
 class CliError extends Error {
-  constructor(message: string, public readonly exitCode: number = 1) {
+  public readonly exitCode: number;
+
+  constructor(message: string, exitCode: number = 1) {
     super(message);
     this.name = "CliError";
+    this.exitCode = exitCode;
   }
 }
 

@@ -454,6 +454,24 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Benchmark varying parallelism levels on real data and document recommended defaults
 - Sketch integration plan for embedding Ollama relevance outcomes into progress updates
 
+### Session 11: 2025-11-12 - CLI Runtime Fix
+**Status**: ✅ Complete
+
+**Completed**:
+- Replaced `CliError` parameter property with explicit assignment to satisfy ts-node runtime constraints
+- Confirmed Vitest suite passes after the CLI fix
+- Switched `run.sh` to transpile with `tsc` then execute `dist/index.js` for reliable ESM behaviour
+- Added safe Atom subtitle extractor to satisfy the TypeScript compiler
+- Verified `npm run build` succeeds post-fix
+
+**Issues Encountered**:
+- `ts-node` run mode rejected TypeScript parameter properties when executing the CLI
+- `ts-node` default loader could not resolve `.js` specifiers back to `.ts` sources without ESM mode enabled
+- TypeScript compilation flagged the direct cast of the Atom subtitle field
+
+**Next Session**:
+- Resume benchmarking parallelism defaults and planning relevance integration once runtime remains stable
+
 ---
 
 ## Notes

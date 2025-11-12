@@ -30,7 +30,10 @@ run_cli() {
   if [[ $# -gt 0 && $1 == "--" ]]; then
     shift
   fi
-  npx ts-node "${ROOT_DIR}/src/index.ts" "$@"
+  echo "Building TypeScript..." >&2
+  npm run build --silent >/dev/null
+  echo "Executing dist/index.js" >&2
+  node "${ROOT_DIR}/dist/index.js" "$@"
 }
 
 run_tests() {

@@ -86,7 +86,7 @@ export async function fetchFeed(url: string, options: FetchFeedOptions = {}): Pr
     const feedDescription = selectFirstString(
       parsed.description,
       (parsed as { subtitle?: unknown }).subtitle,
-      (parsed as Record<string, unknown>)["atom:subtitle"],
+      extractAtomSubtitle(parsed),
     );
 
     return {
@@ -150,6 +150,15 @@ function selectFirstString(...values: unknown[]): string | null {
     }
   }
   return null;
+}
+
+function extractAtomSubtitle(parsed: Parser.Output<ParserItem>): unknown {
+  if (!parsed || typeof parsed !== "object") {
+    return undefined;
+  }
+
+  const record = parsed as unknown as Record<string, unknown>;
+  return record["atom:subtitle"];
 }
 
 function normalizeLink(item: ParserItem): string | null {
