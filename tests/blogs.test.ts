@@ -16,6 +16,15 @@ describe("loadBlogs", () => {
     expect(blogs[0].categories[0].sites[0].feed_url).toBe("https://sample.example.com/feed");
   });
 
+  it("defaults missing URL schemes to https", async () => {
+    const blogs = await loadBlogs({ filePath: sampleFilePath });
+
+    const site = blogs[0].categories[0].sites[2];
+    expect(site.site_url).toBe("https://third.example.com");
+    expect(site.feed_url).toBe("https://third.example.com/rss");
+    expect(site.twitter_url).toBe("https://twitter.com/third");
+  });
+
   it("throws a parse error when JSON is invalid", async () => {
     await expect(loadBlogs({ filePath: notJsonPath })).rejects.toMatchObject({
       kind: "parse-error",
@@ -37,6 +46,7 @@ describe("extractFeedUrls", () => {
     expect(extractFeedUrls(blogs)).toEqual([
       "https://sample.example.com/feed",
       "https://secondary.example.com/rss",
+      "https://third.example.com/rss",
       "https://es.example.com/feed",
     ]);
   });

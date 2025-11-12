@@ -19,6 +19,13 @@
             "author": "Second Author",
             "site_url": "https://secondary.example.com",
             "feed_url": "https://secondary.example.com/rss"
+          },
+          {
+            "title": "Third Site",
+            "author": "Third Author",
+            "site_url": "third.example.com",
+            "feed_url": "third.example.com/rss",
+            "twitter_url": "twitter.com/third"
           }
         ]
       }

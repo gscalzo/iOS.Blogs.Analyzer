@@ -462,12 +462,14 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Confirmed Vitest suite passes after the CLI fix
 - Switched `run.sh` to transpile with `tsc` then execute `dist/index.js` for reliable ESM behaviour
 - Added safe Atom subtitle extractor to satisfy the TypeScript compiler
+- Relaxed blogs schema URL validation and normalized schemeless URLs to default to https
 - Verified `npm run build` succeeds post-fix
 
 **Issues Encountered**:
 - `ts-node` run mode rejected TypeScript parameter properties when executing the CLI
 - `ts-node` default loader could not resolve `.js` specifiers back to `.ts` sources without ESM mode enabled
 - TypeScript compilation flagged the direct cast of the Atom subtitle field
+- Real feed run revealed legacy 403 responses (handled as expected but noted for benchmarking)
 
 **Next Session**:
 - Resume benchmarking parallelism defaults and planning relevance integration once runtime remains stable

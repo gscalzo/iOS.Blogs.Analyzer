@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv, { type ValidateFunction } from "ajv";
 import addFormats from "ajv-formats";
-import type { BlogsDirectory } from "./types.js";
+import type { BlogsDirectory, BlogSite } from "./types.js";
 
 export type BlogDataErrorKind = "read-error" | "parse-error" | "validation-error";
 
@@ -51,7 +51,7 @@ export async function loadBlogs(options: LoadBlogsOptions = {}): Promise<BlogsDi
     throw new BlogDataError(message, "validation-error");
   }
 
-  return parsed as BlogsDirectory;
+  return normalizeBlogsDirectory(parsed as BlogsDirectory);
 }
 
 export interface ExtractFeedUrlsOptions {
@@ -100,4 +100,50 @@ function getValidator(schemaPath: string): ValidateFunction<BlogsDirectory> {
   const validator = ajv.compile<BlogsDirectory>(schema);
   validatorCache.set(schemaPath, validator);
   return validator;
+}
+
+function normalizeBlogsDirectory(directory: BlogsDirectory): BlogsDirectory {
+  return directory.map((group) => ({
+    ...group,
+    categories: group.categories.map((category) => ({
+      ...category,
+      sites: category.sites.map((site) => normalizeSiteUrls(site)),
+    })),
+  }));
+}
+
+const URL_WITH_SCHEME_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//;
+
+function ensureHttpsScheme(url: string): string {
+  const trimmed = url.trim();
+  if (trimmed.length === 0) {
+    return trimmed;
+  }
+
+  if (URL_WITH_SCHEME_PATTERN.test(trimmed)) {
+    return trimmed;
+  }
+
+  if (trimmed.startsWith("//")) {
+    return `https:${trimmed}`;
+  }
+
+  return `https://${trimmed}`;
+}
+
+function normalizeSiteUrls(site: BlogSite): BlogSite {
+  const normalized: BlogSite = { ...site };
+
+  for (const key of Object.keys(site) as Array<keyof BlogSite>) {
+    if (!key.endsWith("_url")) {
+      continue;
+    }
+
+    const value = site[key];
+    if (typeof value === "string") {
+      normalized[key] = ensureHttpsScheme(value);
+    }
+  }
+
+  return normalized;
 }

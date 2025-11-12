@@ -42,43 +42,43 @@
                   },
                   "site_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "feed_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "bluesky_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "github_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "linkedin_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "mastodon_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "microblog_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "threads_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "twitter_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   },
                   "weibo_url": {
                     "type": "string",
-                    "format": "uri"
+                    "format": "uri-reference"
                   }
                 }
               }
