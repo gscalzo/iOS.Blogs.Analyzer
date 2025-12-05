@@ -49,6 +49,7 @@ IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
 ### Configuration Notes
 
 - **Ollama model**: defaults to `llama3.1`. Override via `--model <name>` or `IOS_BLOGS_ANALYZER_MODEL`.
+- **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
 - **Blog subset**: `--max-blogs` is the fastest way to run smoke tests without touching the huge `blogs.json`.
 - **Time window**: `--months` controls the cutoff for `publishedAt` filtering before any Ollama calls fire, keeping the session cost down.
 - **Parallelism**: The async pool is capped by `--parallel` (default 3) to avoid overwhelming local Ollama.

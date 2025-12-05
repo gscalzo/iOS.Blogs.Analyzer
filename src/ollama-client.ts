@@ -1,13 +1,13 @@
 const DEFAULT_BASE_URL = "http://127.0.0.1:11434";
 const DEFAULT_MODEL = "llama3.1";
 const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
-const SUPPORTED_MODELS = ["llama3.1", "qwq"] as const;
+const SUPPORTED_MODEL_PREFIXES = ["llama3.1", "qwq"] as const;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_DELAY_MS = 250;
 const DEFAULT_RETRY_MULTIPLIER = 2;
 
-type SupportedModel = (typeof SUPPORTED_MODELS)[number];
+type SupportedModel = string;
 
 export interface FetchInit {
   method?: string;
@@ -100,6 +100,8 @@ export class OllamaClient {
   private readonly maxRetries: number;
   private readonly retryDelayMs: number;
   private readonly retryMultiplier: number;
+  private availableModels?: string[];
+  private readonly resolvedModelCache = new Map<string, string>();
 
   constructor(options: OllamaClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
@@ -125,6 +127,7 @@ export class OllamaClient {
           throw new OllamaRequestError(`Unable to reach Ollama: ${detail}`, response.status);
         }
 
+        await this.captureAvailableModels(response);
         return true;
       },
       { signal: options.signal },
@@ -138,7 +141,8 @@ export class OllamaClient {
       throw new OllamaConfigurationError("Description must be a non-empty string");
     }
 
-    const model = this.resolveModel(options.model, { allowDefault: true });
+    const desiredModel = this.resolveModel(options.model, { allowDefault: true });
+    const model = this.selectInstalledModel(desiredModel);
     const payload = {
       model,
       prompt: this.buildPrompt(description),
@@ -217,13 +221,16 @@ export class OllamaClient {
 
     const normalized = resolved.trim();
 
-    if (!SUPPORTED_MODELS.includes(normalized as SupportedModel)) {
+    if (!this.isSupportedModel(normalized)) {
       throw new OllamaConfigurationError(
-        `Unsupported Ollama model "${normalized}". Supported models: ${SUPPORTED_MODELS.join(", ")}`,
+        `Unsupported Ollama model "${normalized}". Supported models: ${SUPPORTED_MODEL_PREFIXES.join(", ")}`,
       );
     }
 
     return normalized as SupportedModel;
+  }
+  private isSupportedModel(candidate: string): boolean {
+    return SUPPORTED_MODEL_PREFIXES.some((prefix) => candidate === prefix || candidate.startsWith(`${prefix}:`));
   }
 
   private normalizeTimeout(timeout?: number): number {
@@ -256,6 +263,58 @@ export class OllamaClient {
     }
 
     return DEFAULT_RETRY_MULTIPLIER;
+  }
+
+  private async captureAvailableModels(response: FetchResponse): Promise<void> {
+    try {
+      const payload = (await response.json()) as { models?: Array<{ name?: unknown }> };
+      if (!payload || !Array.isArray(payload.models)) {
+        return;
+      }
+
+      const names = payload.models
+        .map((entry) => (typeof entry?.name === "string" ? entry.name.trim() : ""))
+        .filter((name): name is string => name.length > 0);
+
+      if (names.length > 0) {
+        this.availableModels = names;
+      }
+    } catch {
+      // Ignore parse errors; availability improvements are best-effort.
+    }
+  }
+
+  private selectInstalledModel(preferred: string): string {
+    if (!this.availableModels?.length) {
+      return preferred;
+    }
+
+    if (this.availableModels.includes(preferred)) {
+      return preferred;
+    }
+
+    const cached = this.resolvedModelCache.get(preferred);
+    if (cached) {
+      return cached;
+    }
+
+    const targetPrefix = this.extractModelPrefix(preferred);
+    const fallback = this.availableModels.find((model) => this.extractModelPrefix(model) === targetPrefix);
+
+    if (fallback) {
+      this.resolvedModelCache.set(preferred, fallback);
+      return fallback;
+    }
+
+    return preferred;
+  }
+
+  private extractModelPrefix(model: string): string {
+    const separatorIndex = model.indexOf(":");
+    if (separatorIndex === -1) {
+      return model;
+    }
+    return model.slice(0, separatorIndex);
   }
 
   private joinUrl(path: string): string {

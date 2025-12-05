@@ -50,6 +50,25 @@ describe("OllamaClient", () => {
     expect(init?.method).toBe("GET");
   });
 
+  it("selects an installed tag variant for the default model after connectivity check", async () => {
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(async (url) => {
+      if (url.endsWith("/api/tags")) {
+        return createJsonResponse({ models: [{ name: "llama3.1:8b" }] });
+      }
+      return createJsonResponse({ response: JSON.stringify({ relevant: false }) });
+    });
+    const client = new OllamaClient({ fetcher });
+
+    await client.checkConnection();
+    await client.analyzeText("Discusses Core ML");
+
+    const generateCall = fetcher.mock.calls.find(([calledUrl]) => calledUrl.endsWith("/api/generate"));
+    expect(generateCall).toBeDefined();
+    const [, generateInit] = generateCall ?? [];
+    const payload = JSON.parse(generateInit?.body ?? "{}");
+    expect(payload.model).toBe("llama3.1:8b");
+  });
+
   it("throws when connectivity check fails", async () => {
     const { mock, fetcher } = createMockFetcher(async () =>
       createJsonResponse(
@@ -102,6 +121,19 @@ describe("OllamaClient", () => {
     const [, init] = mock.mock.calls[0];
     const parsedBody = JSON.parse(init?.body ?? "{}");
     expect(parsedBody.model).toBe("qwq");
+  });
+
+  it("accepts explicitly tagged model overrides", async () => {
+    const { mock, fetcher } = createMockFetcher(async () =>
+      createJsonResponse({ response: JSON.stringify({ relevant: false, reason: "Not AI" }) }),
+    );
+    const client = new OllamaClient({ fetcher, model: "llama3.1:8b" });
+
+    await client.analyzeText("Some description");
+
+    const [, init] = mock.mock.calls[0];
+    const parsedBody = JSON.parse(init?.body ?? "{}");
+    expect(parsedBody.model).toBe("llama3.1:8b");
   });
 
   it("rejects unsupported models", () => {

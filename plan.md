@@ -7,7 +7,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ## Current Status: 🟢 Phase 6 In Progress
 
 **Last Updated**: 2025-12-05  
-**Current Session**: Phase 5 Output Formatting
+**Current Session**: Phase 6 Real-Data Validation
 
 ---
 
@@ -195,8 +195,8 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 #### 6.4 Final Testing
 - [x] Run full test suite
-- [ ] Test with real blogs.json data
-- [ ] Test with local Ollama instance
+- [ ] Test with real blogs.json data *(blocked: requires live Ollama + network access)*
+- [ ] Test with local Ollama instance *(blocked: no Ollama daemon running in current environment; `curl http://127.0.0.1:11434/api/tags` fails)*
 - [x] Verify all CLI parameters work
 - [x] Test error scenarios
 
@@ -535,6 +535,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Expanded README with usage examples, configuration notes, troubleshooting guidance, and linked architecture overview.
 - Created `ARCHITECTURE.md` summarizing component responsibilities, data flow, concurrency strategy, and future enhancements.
 - Documented performance optimizations (month filtering + feed caching) and added inline comments for the new caching logic.
+- Enhanced Ollama client to autodetect installed tagged variants (e.g., `llama3.1:8b`) during `/api/tags` checks so real-data runs no longer fail when only tagged models are available; added regression tests covering this behavior.
 
 **Issues Encountered**:
 - Unable to run true end-to-end verification against the massive `blogs.json` with a live Ollama model inside the test harness; still pending a local Ollama instance.
