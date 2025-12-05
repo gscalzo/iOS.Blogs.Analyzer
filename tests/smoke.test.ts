@@ -79,7 +79,22 @@ describe("parseArguments", () => {
   });
 
   it("parses output and verbose flags", () => {
-    expect(parseArguments(["--output", "results.json", "--verbose"])).toEqual({ output: "results.json", verbose: true });
+    expect(parseArguments(["--output", "results.json", "--verbose"])).toEqual({
+      output: { format: "json", destination: "results.json" },
+      verbose: true,
+    });
+  });
+
+  it("parses output format when prefixed", () => {
+    expect(parseArguments(["--output", "csv:reports.csv"])).toEqual({
+      output: { format: "csv", destination: "reports.csv" },
+    });
+  });
+
+  it("supports stdout CSV selection via --output csv", () => {
+    expect(parseArguments(["--output", "csv"])).toEqual({
+      output: { format: "csv", destination: undefined },
+    });
   });
 
   it("parses --months when provided", () => {
@@ -104,6 +119,10 @@ describe("parseArguments", () => {
 
   it("rejects empty output values", () => {
     expect(() => parseArguments(["--output", " "])).toThrow(/--output must be a non-empty string/);
+  });
+
+  it("rejects unsupported output formats", () => {
+    expect(() => parseArguments(["--output", "xml:report.xml"])).toThrow(/--output format must be one of/);
   });
 
   it("rejects invalid --months values", () => {
@@ -351,5 +370,79 @@ describe("main", () => {
 
     expect(mockedWriteFile).toHaveBeenCalledWith("results.json", expect.stringContaining('"feeds"'), "utf8");
     expect(stdout.messages.join("")).toContain("Results written to results.json");
+  });
+
+  it("writes CSV output to a file when --output csv:<path> is provided", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      {
+        feedUrl: "https://example.com/feed",
+        status: "fulfilled",
+        feed: { title: "Example", items: [] },
+        durationMs: 400,
+        relevantPosts: [
+          {
+            title: "AI in iOS",
+            link: "https://example.com/post",
+            publishedAt: "2025-11-01T00:00:00.000Z",
+            analysis: {
+              relevant: true,
+              rawResponse: "{}",
+              reason: "Matches keywords, including frameworks",
+              confidence: 0.92,
+              tags: ["ai", "ios"],
+            },
+          },
+        ],
+      },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--output", "csv:results.csv"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedWriteFile).toHaveBeenCalledTimes(1);
+    const csvPayload = mockedWriteFile.mock.calls[0][1];
+    expect(csvPayload).toContain("feed_title,feed_url,post_title,post_link,published_at,confidence,tags,reason");
+    expect(csvPayload).toMatch(/Example,https:\/\/example\.com\/feed,AI in iOS,https:\/\/example\.com\/post,2025-11-01T00:00:00.000Z,0.92,ai;ios,"Matches keywords, including frameworks"/);
+    expect(stdout.messages.join("")).toContain("Results written to results.csv");
+  });
+
+  it("writes CSV to stdout when --output csv is provided without a file", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      {
+        feedUrl: "https://example.com/feed",
+        status: "fulfilled",
+        feed: { title: "Example", items: [] },
+        durationMs: 400,
+        relevantPosts: [
+          {
+            title: "AI in iOS",
+            link: "https://example.com/post",
+            publishedAt: "2025-11-01T00:00:00.000Z",
+            analysis: {
+              relevant: true,
+              rawResponse: "{}",
+              reason: "Matches keywords",
+              confidence: 0.87,
+            },
+          },
+        ],
+      },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--output", "csv"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedWriteFile).not.toHaveBeenCalled();
+    const stdoutText = stdout.messages.join("");
+    expect(stdoutText).toContain("feed_title,feed_url,post_title,post_link,published_at,confidence,tags,reason");
+    expect(stdoutText).toContain("Example,https://example.com/feed,AI in iOS,https://example.com/post,2025-11-01T00:00:00.000Z,0.87,,Matches keywords");
   });
 });

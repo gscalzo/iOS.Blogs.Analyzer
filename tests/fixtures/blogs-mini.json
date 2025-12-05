@@ -1,0 +1,21 @@
+[
+  {
+    "language": "en",
+    "title": "Mini Directory",
+    "categories": [
+      {
+        "title": "Indie",
+        "slug": "indie",
+        "description": "Indie iOS blogs",
+        "sites": [
+          {
+            "title": "Integration Blog",
+            "author": "Integration Author",
+            "site_url": "https://integration.example",
+            "feed_url": "https://integration.example/feed"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Integration Feed</title>
+    <description>Fixture feed for integration tests</description>
+    <link>https://integration.example/</link>
+    <item>
+      <title>Building AI assistants for iOS</title>
+      <link>https://integration.example/posts/ai-ios</link>
+      <description>Deep dive into AI driven workflows on iOS.</description>
+      <pubDate>Fri, 01 Nov 2025 12:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Old tooling tips</title>
+      <link>https://integration.example/posts/old</link>
+      <description>Legacy advice no longer relevant.</description>
+      <pubDate>Wed, 01 May 2024 08:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Missing description</title>
+      <link>https://integration.example/posts/missing</link>
+      <pubDate>Tue, 19 Nov 2025 09:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

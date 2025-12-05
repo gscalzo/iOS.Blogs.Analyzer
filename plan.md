@@ -156,7 +156,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
   - Post link
   - Relevance score/reason
 - [x] Support JSON output format
-- [ ] Support CSV export
+- [x] Support CSV export
 
 #### 5.3 Tests
 - [x] Test argument parsing
@@ -493,7 +493,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Implement CLI output formatting options and hook verbose/output flags into runtime behaviour
 
 ### Session 13: 2025-12-05 - Phase 5 Output Integration
-**Status**: 🔄 In Progress
+**Status**: ✅ Complete
 
 **Completed**:
 - Added `--months` CLI filter and date-window enforcement before analysis
@@ -510,6 +510,22 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Add end-to-end integration tests covering the full pipeline with mocked Ollama responses
 - Start documentation updates for CLI usage and new flags
 
+### Session 14: 2025-12-05 - Phase 5 CSV Export & Integration
+**Status**: ✅ Complete
+
+**Completed**:
+- Extended `--output` parsing to select JSON/CSV formats (stdout or file) and implemented the CSV report writer.
+- Added README guidance covering CLI usage, `run.sh` commands, and the new `--output` syntax.
+- Introduced smoke tests for CSV output targets plus an end-to-end integration test that loads sample blogs, parses real feed XML, and analyzes posts with mocked Ollama results.
+
+**Issues Encountered**:
+- None; Ollama remains mocked pending local availability.
+
+**Next Session**:
+- Flesh out documentation with real-world examples (JSON & CSV snippets) and troubleshooting tips.
+- Run the analyzer against a larger subset of `blogs.json` with local Ollama to validate CSV output performance.
+- Start Phase 6 work by planning broader end-to-end validation (CLI invocation plus real bloggers) and benchmarking default parallelism.
+
 ---
 
 ## Notes
@@ -520,4 +536,3 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Consider adding language filter as future enhancement
 - RSS feeds may use both RSS and Atom formats
 - Some feeds may be inactive or broken - handle gracefully
-

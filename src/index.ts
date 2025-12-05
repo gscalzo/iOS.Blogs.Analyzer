@@ -4,12 +4,19 @@ import { extractFeedUrls, loadBlogs } from "./blogs.js";
 import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysisResult, type RelevantPost } from "./analyzer.js";
 import { OllamaClient } from "./ollama-client.js";
 
+export type OutputFormat = "json" | "csv";
+
+export interface OutputTarget {
+  format: OutputFormat;
+  destination?: string;
+}
+
 export interface CliArguments {
   maxBlogs?: number;
   helpRequested?: boolean;
   parallel?: number;
   model?: string;
-  output?: string;
+  output?: OutputTarget;
   verbose?: boolean;
   months?: number;
 }
@@ -23,6 +30,7 @@ export interface MainOptions {
 }
 
 const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
+const OUTPUT_FORMATS: OutputFormat[] = ["json", "csv"];
 
 class CliError extends Error {
   public readonly exitCode: number;
@@ -145,7 +153,7 @@ export function parseArguments(argv: string[]): CliArguments {
     if (trimmed.length === 0) {
       throw new CliError("--output must be a non-empty string");
     }
-    result.output = trimmed;
+    result.output = parseOutputOption(trimmed);
   }
 
   if (typeof parsed.verbose === "boolean") {
@@ -153,6 +161,50 @@ export function parseArguments(argv: string[]): CliArguments {
   }
 
   return result;
+}
+
+function parseOutputOption(spec: string): OutputTarget {
+  const trimmed = spec.trim();
+  if (trimmed.length === 0) {
+    throw new CliError("--output must be a non-empty string");
+  }
+
+  const lowerCased = trimmed.toLowerCase();
+  if (isSupportedOutputFormat(lowerCased)) {
+    return { format: lowerCased, destination: undefined };
+  }
+
+  const colonIndex = trimmed.indexOf(":");
+  if (colonIndex > -1) {
+    const prefix = trimmed.slice(0, colonIndex).toLowerCase();
+    const remainder = trimmed.slice(colonIndex + 1).trim();
+    if (isSupportedOutputFormat(prefix)) {
+      return {
+        format: prefix,
+        destination: remainder.length > 0 ? remainder : undefined,
+      };
+    }
+
+    if (shouldFlagUnknownFormat(prefix, remainder)) {
+      throw new CliError(`--output format must be one of: ${OUTPUT_FORMATS.join(", ")}`);
+    }
+  }
+
+  return { format: "json", destination: trimmed };
+}
+
+function isSupportedOutputFormat(value: string): value is OutputFormat {
+  return OUTPUT_FORMATS.includes(value as OutputFormat);
+}
+
+function shouldFlagUnknownFormat(prefix: string, remainder: string): boolean {
+  if (prefix.length < 2) {
+    return false;
+  }
+  if (remainder.startsWith("//") || remainder.startsWith("\\") || remainder.startsWith("/")) {
+    return false;
+  }
+  return /^[a-z]+$/i.test(prefix);
 }
 
 function renderHelp(): string {
@@ -167,7 +219,8 @@ function renderHelp(): string {
     "  --parallel <number>    Maximum concurrent requests (default: 3)",
     "  --model <name>         Ollama model to use (default: llama3.1)",
     `  --months <number>      Analyze posts within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
-    "  --output <file>        Write results to a file instead of stdout",
+    "  --output [format:]<target>  Choose output format (json|csv) and optional file",
+    "                              e.g., --output csv:report.csv",
     "  --verbose              Enable verbose logging",
     "  -h, --help              Show this help message",
     "",
@@ -271,6 +324,65 @@ async function emitJsonReport(
   }
 
   stdout.write(`${payload}\n`);
+}
+
+async function emitCsvReport(
+  reports: FeedReport[],
+  destination: string | undefined,
+  stdout: NonNullable<MainOptions["stdout"]>,
+): Promise<void> {
+  const payload = createCsvPayload(reports);
+  const output = `${payload}\n`;
+
+  if (destination) {
+    await writeFile(destination, output, "utf8");
+    stdout.write(`Results written to ${destination}\n`);
+    return;
+  }
+
+  stdout.write(output);
+}
+
+function createCsvPayload(reports: FeedReport[]): string {
+  const header = ["feed_title", "feed_url", "post_title", "post_link", "published_at", "confidence", "tags", "reason"];
+  const rows: string[][] = [header];
+
+  for (const report of reports) {
+    for (const post of report.relevantPosts) {
+      rows.push([
+        report.feedTitle ?? report.feedUrl,
+        report.feedUrl,
+        post.title,
+        post.link,
+        post.publishedAt ?? "",
+        formatOptionalNumber(post.confidence),
+        (post.tags ?? []).join(";"),
+        post.reason ?? "",
+      ]);
+    }
+  }
+
+  return rows.map((row) => row.map(escapeCsvValue).join(",")).join("\n");
+}
+
+function escapeCsvValue(value: string): string {
+  const normalized = value.replace(/\r\n/g, "\n");
+  if (normalized.length === 0) {
+    return "";
+  }
+
+  if (/[",\n]/.test(normalized)) {
+    return `"${normalized.replace(/"/g, '""')}"`;
+  }
+
+  return normalized;
+}
+
+function formatOptionalNumber(value: number | undefined): string {
+  if (!Number.isFinite(value)) {
+    return "";
+  }
+  return String(value);
 }
 
 function logVerboseFindings(reports: FeedReport[], stdout: NonNullable<MainOptions["stdout"]>): void {
@@ -411,8 +523,14 @@ export async function main(options: MainOptions = {}): Promise<void> {
       logVerboseFindings(reports, stdout);
     }
 
+    const outputTarget = cliArguments.output ?? { format: "json", destination: undefined };
+
     try {
-      await emitJsonReport(reports, cliArguments.output, stdout);
+      if (outputTarget.format === "csv") {
+        await emitCsvReport(reports, outputTarget.destination, stdout);
+      } else {
+        await emitJsonReport(reports, outputTarget.destination, stdout);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to write results";
       stderr.write(`Error: ${message}\n`);
