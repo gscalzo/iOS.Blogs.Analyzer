@@ -83,6 +83,9 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
 
   const total = feedUrls.length;
   let completed = 0;
+  // Cache parsed feeds and any in-flight fetches so duplicate URLs do not re-hit the network.
+  const feedCache = new Map<string, ParsedFeed>();
+  const inflightFetches = new Map<string, Promise<ParsedFeed>>();
 
   const results = await asyncPool(
     feedUrls,
@@ -91,9 +94,23 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
       const startedAt = clock();
 
       try {
-        const feed = await dependencies.fetchFeed(feedUrl, {
-          ...options.fetchOptions,
-        });
+        let feed = feedCache.get(feedUrl);
+        if (!feed) {
+          // Deduplicate concurrent fetches for identical feed URLs.
+          let inflight = inflightFetches.get(feedUrl);
+          if (!inflight) {
+            inflight = dependencies.fetchFeed(feedUrl, {
+              ...options.fetchOptions,
+            });
+            inflightFetches.set(feedUrl, inflight);
+          }
+          try {
+            feed = await inflight;
+            feedCache.set(feedUrl, feed);
+          } finally {
+            inflightFetches.delete(feedUrl);
+          }
+        }
         result.feed = feed;
         if (feed.items?.length) {
           const referenceDate = new Date(clock());

@@ -111,6 +111,35 @@ describe("analyzeFeeds", () => {
 
     await expect(promise).rejects.toThrow(/stop/);
   });
+
+  it("caches fetched feeds to avoid duplicate network work", async () => {
+    const feeds = ["https://example.com/feed", "https://example.com/feed"];
+    const fetchFeed = vi.fn(async () => ({
+      title: "Example",
+      description: undefined,
+      items: [
+        {
+          title: "AI in iOS",
+          link: "https://example.com/post",
+          description: "AI",
+          publishedAt: "2025-11-01T00:00:00.000Z",
+        },
+      ],
+    }));
+    const analysisClient = {
+      analyze: vi.fn().mockResolvedValue(makeAnalysis({ relevant: false })),
+    };
+
+    const results = await analyzeFeeds(feeds, {
+      dependencies: { fetchFeed, analysisClient },
+      months: 3,
+      clock: () => Date.parse("2025-12-05T00:00:00.000Z"),
+    });
+
+    expect(results).toHaveLength(2);
+    expect(fetchFeed).toHaveBeenCalledTimes(1);
+    expect(analysisClient.analyze).toHaveBeenCalledTimes(2);
+  });
 });
 
 function summarize(results: FeedAnalysisResult[]): { fulfilled: FeedAnalysisResult[]; rejected: FeedAnalysisResult[] } {
