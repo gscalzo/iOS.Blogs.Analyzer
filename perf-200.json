@@ -1,0 +1,1612 @@
+{
+  "generatedAt": "2025-12-05T19:28:29.075Z",
+  "parameters": {
+    "parallel": 6,
+    "months": 6,
+    "maxBlogs": 200,
+    "source": "directory",
+    "feedCount": 200,
+    "filters": {
+      "languages": [
+        "en"
+      ],
+      "categories": [
+        "development blogs",
+        "design blogs",
+        "marketing and business blogs",
+        "company blogs",
+        "newsletters"
+      ]
+    }
+  },
+  "summary": {
+    "totalFeeds": 200,
+    "succeeded": 176,
+    "failed": 24,
+    "elapsedMs": 1069497,
+    "averageDurationMs": 31986.63068181818
+  },
+  "feeds": [
+    {
+      "feedUrl": "https://journal.gaelfoppolo.com/feed.xml",
+      "feedTitle": "/var/log/journal",
+      "status": "fulfilled",
+      "durationMs": 316,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/a-swift-misadventure",
+      "feedTitle": "A Swift misadventure - Medium",
+      "status": "fulfilled",
+      "durationMs": 345,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://skyaaron.com/posts/index.xml",
+      "feedTitle": "Aaron Sky",
+      "status": "fulfilled",
+      "durationMs": 275,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://ackermann.io/feed",
+      "feedTitle": "Ryan Ackermann",
+      "status": "fulfilled",
+      "durationMs": 426,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://blog.adambell.ca/feed.xml",
+      "feedTitle": "Adam Bell",
+      "status": "fulfilled",
+      "durationMs": 446,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://blog.aniseedapps.com/rss/",
+      "status": "rejected",
+      "durationMs": 257,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://blog.aniseedapps.com/rss/"
+    },
+    {
+      "feedUrl": "https://adamwulf.me/feed/",
+      "status": "rejected",
+      "durationMs": 311,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 404 for https://adamwulf.me/feed/"
+    },
+    {
+      "feedUrl": "https://adincebic.com/feed.xml",
+      "feedTitle": "Adin Ćebić",
+      "status": "fulfilled",
+      "durationMs": 46200,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://adrian.schoenig.me/feed.xml",
+      "status": "rejected",
+      "durationMs": 1010,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://adrian.schoenig.me/feed.xml"
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@adrianmsliwa",
+      "feedTitle": "Stories by Adrian Śliwa on Medium",
+      "status": "fulfilled",
+      "durationMs": 162,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://airspeedvelocity.net/feed/",
+      "feedTitle": "Airspeed Velocity",
+      "status": "fulfilled",
+      "durationMs": 599,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@alanzeino",
+      "feedTitle": "Stories by Alan on Medium",
+      "status": "fulfilled",
+      "durationMs": 524,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://albertodebortoli.com/rss/",
+      "feedTitle": "Alberto De Bortoli",
+      "status": "fulfilled",
+      "durationMs": 59162,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alejandromp.com/development/feed.rss",
+      "feedTitle": "Development Blog - Alejandro M. P.",
+      "status": "fulfilled",
+      "durationMs": 292,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://aplus.rs/index.xml",
+      "feedTitle": "A+ programming moments",
+      "status": "fulfilled",
+      "durationMs": 183574,
+      "analyzedItems": 4,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@alessandromanilii",
+      "feedTitle": "Stories by Alessandro Manilii on Medium",
+      "status": "fulfilled",
+      "durationMs": 91683,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/@alexandercohen/feed",
+      "feedTitle": "Stories by Alex Cohen on Medium",
+      "status": "fulfilled",
+      "durationMs": 500,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@dn070287gav",
+      "feedTitle": "Stories by Aleksej Gurin on Medium",
+      "status": "fulfilled",
+      "durationMs": 179,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alexknows.biz/feed.xml",
+      "feedTitle": "Alex",
+      "status": "fulfilled",
+      "durationMs": 362,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.thealexanderlee.com/blog?format=rss",
+      "feedTitle": "Dev Blog - Alex Lee",
+      "status": "fulfilled",
+      "durationMs": 588,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@shchukin-alex",
+      "feedTitle": "Stories by Alex Shchukin on Medium",
+      "status": "fulfilled",
+      "durationMs": 534,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://kean.blog/feed.xml",
+      "feedTitle": "kean.blog",
+      "status": "fulfilled",
+      "durationMs": 46004,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alexandersandberg.com/feed.rss",
+      "feedTitle": "Alexander Sandberg",
+      "status": "fulfilled",
+      "durationMs": 74922,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alexanderweiss.dev/blog/rss.xml",
+      "feedTitle": "Alexander Weiß's blog feed",
+      "status": "fulfilled",
+      "durationMs": 385,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://nomothetis.svbtle.com/feed",
+      "feedTitle": "Alexandros Salazar",
+      "status": "fulfilled",
+      "durationMs": 838,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://nalexn.github.io/feed.xml",
+      "feedTitle": "Alexey Naumov",
+      "status": "fulfilled",
+      "durationMs": 154,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@alexiscreuzot",
+      "feedTitle": "Stories by Alexis Creuzot on Medium",
+      "status": "fulfilled",
+      "durationMs": 383,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alexpaul.dev/feed/",
+      "feedTitle": "alexpaul.dev",
+      "status": "fulfilled",
+      "durationMs": 195400,
+      "analyzedItems": 5,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://alia-traces.github.io/feed.xml",
+      "feedTitle": "Catnip codes",
+      "status": "fulfilled",
+      "durationMs": 298,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://allthecode.co/feed.xml",
+      "feedTitle": "All The Code Blog",
+      "status": "fulfilled",
+      "durationMs": 3849,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://feeds.allenpike.com/feed/",
+      "feedTitle": "Allen Pike",
+      "status": "fulfilled",
+      "durationMs": 137601,
+      "analyzedItems": 3,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.alwaysrightinstitute.com/feed",
+      "feedTitle": "Helge Heß",
+      "status": "fulfilled",
+      "durationMs": 492,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alwaysprocessing.blog/feed.xml",
+      "feedTitle": "Always Processing",
+      "status": "fulfilled",
+      "durationMs": 354,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://amin.benarieb.com/index.xml",
+      "status": "rejected",
+      "durationMs": 317,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://amin.benarieb.com/index.xml"
+    },
+    {
+      "feedUrl": "https://ampersandsoftworks.com/feed/by_tag/development.xml",
+      "feedTitle": "Ampersand Softworks",
+      "status": "fulfilled",
+      "durationMs": 1043,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cuteios.dev/feed.xml",
+      "feedTitle": "Amy is a cute iOS Developer",
+      "status": "fulfilled",
+      "durationMs": 392,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.amyworrall.com/blog?format=rss",
+      "feedTitle": "Amy Worrall's Blog - Amy Worrall",
+      "status": "fulfilled",
+      "durationMs": 942,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@vixentael",
+      "feedTitle": "Stories by vixentael on Medium",
+      "status": "fulfilled",
+      "durationMs": 1026,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@andr3a88",
+      "feedTitle": "Stories by Andrea Stevanato on Medium",
+      "status": "fulfilled",
+      "durationMs": 46022,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://andreaslydemann.com/feed/",
+      "feedTitle": "Andreas Lüdemann",
+      "status": "fulfilled",
+      "durationMs": 1614,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://anerma.de/blog/feed/",
+      "feedTitle": "Anerma – Blog",
+      "status": "fulfilled",
+      "durationMs": 329,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.andrewcbancroft.com/index.xml",
+      "feedTitle": "Andrew Bancroft",
+      "status": "fulfilled",
+      "durationMs": 258,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://andrewking.ca/category/ios-development/feed/",
+      "feedTitle": "iOS Development Archives - Andrew King",
+      "status": "fulfilled",
+      "durationMs": 972,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@s1ddok",
+      "feedTitle": "Stories by Andrey Volodin on Medium",
+      "status": "fulfilled",
+      "durationMs": 607,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://qstrnd.com/feed.xml",
+      "status": "rejected",
+      "durationMs": 175,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for http://qstrnd.com/feed.xml"
+    },
+    {
+      "feedUrl": "https://www.andyibanez.com/tags/apple/index.xml",
+      "feedTitle": "Apple on Andy Ibanez",
+      "status": "fulfilled",
+      "durationMs": 410,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://antran.app/rss/swift.xml",
+      "feedTitle": "Swift by An Tran",
+      "status": "fulfilled",
+      "durationMs": 46415,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://antitypical.com/feed.xml",
+      "status": "rejected",
+      "durationMs": 175,
+      "relevantPostCount": 0,
+      "error": "Failed to fetch feed: https://antitypical.com/feed.xml"
+    },
+    {
+      "feedUrl": "https://antongubarenko.substack.com/feed",
+      "feedTitle": "Anton’s Substack",
+      "status": "fulfilled",
+      "durationMs": 366804,
+      "analyzedItems": 13,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/anysuggestion",
+      "feedTitle": "AnySuggestion - Medium",
+      "status": "fulfilled",
+      "durationMs": 860,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://appdecentral.com/feed/",
+      "feedTitle": "A p p D e c e n t r a l",
+      "status": "fulfilled",
+      "durationMs": 400,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://appforce1.net/blog/rss.php",
+      "status": "rejected",
+      "durationMs": 352,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://appforce1.net/blog/rss.php"
+    },
+    {
+      "feedUrl": "https://appmakers.dev/feed/",
+      "feedTitle": "AppMakers.Dev",
+      "status": "fulfilled",
+      "durationMs": 57722,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.appsdissected.com/feed/",
+      "feedTitle": "Apps Dissected",
+      "status": "fulfilled",
+      "durationMs": 1730,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://appventure.me/feed.rss",
+      "feedTitle": "AppVenture. Simple Swift Guides",
+      "status": "fulfilled",
+      "durationMs": 535,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://alanquatermain.me/feed.xml",
+      "feedTitle": "AQBlog",
+      "status": "fulfilled",
+      "durationMs": 118753,
+      "analyzedItems": 3,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://feeds.feedburner.com/ArkadiuszHolko",
+      "feedTitle": "Arek Holko",
+      "status": "fulfilled",
+      "durationMs": 370,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://arjunnayini.com/feed.xml",
+      "feedTitle": "b3",
+      "status": "fulfilled",
+      "durationMs": 294,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://sowenjub.me/writes/rss/",
+      "feedTitle": "Arnaud 🏝 Joubay",
+      "status": "fulfilled",
+      "durationMs": 682,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://artandscienceofcoding.com/feed.xml",
+      "feedTitle": "art and science of coding",
+      "status": "fulfilled",
+      "durationMs": 658,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@dive",
+      "feedTitle": "Stories by Artem Loenko on Medium",
+      "status": "fulfilled",
+      "durationMs": 472,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://artemnovichkov.com/feed.xml",
+      "feedTitle": "Artem Novichkov",
+      "status": "fulfilled",
+      "durationMs": 192049,
+      "analyzedItems": 6,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@artsabintsev",
+      "feedTitle": "Stories by Arthur Ariel Sabintsev on Medium",
+      "status": "fulfilled",
+      "durationMs": 183568,
+      "analyzedItems": 4,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@arthurofbabylon",
+      "feedTitle": "Stories by Arthur Van Siclen on Medium",
+      "status": "fulfilled",
+      "durationMs": 46341,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://arturgruchala.com/rss/",
+      "feedTitle": "Artur Gruchała",
+      "status": "fulfilled",
+      "durationMs": 43648,
+      "analyzedItems": 4,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://feed.ashfurrow.com/feed.xml",
+      "feedTitle": "Ash Furrow's Blog",
+      "status": "fulfilled",
+      "durationMs": 218342,
+      "analyzedItems": 9,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://asifmohd.github.io/feed.ios.xml",
+      "feedTitle": "Asif's Blog",
+      "status": "fulfilled",
+      "durationMs": 275,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://atomicbird.com/index.xml",
+      "feedTitle": "The Atomic Birdhouse",
+      "status": "fulfilled",
+      "durationMs": 947,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.attributedstrings.com/rss/",
+      "feedTitle": "AttributedStrings",
+      "status": "fulfilled",
+      "durationMs": 479,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://audiokitpro.com/feed/",
+      "status": "rejected",
+      "durationMs": 247,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://audiokitpro.com/feed/"
+    },
+    {
+      "feedUrl": "https://augmentedcode.io/blog/feed/",
+      "feedTitle": "Blog – Augmented Code",
+      "status": "fulfilled",
+      "durationMs": 261,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@aymen.rebouh",
+      "feedTitle": "Stories by Aymen Rebouh on Medium",
+      "status": "fulfilled",
+      "durationMs": 628,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://azamsharp.com/feed.xml",
+      "feedTitle": "AzamSharp",
+      "status": "fulfilled",
+      "durationMs": 195117,
+      "analyzedItems": 5,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@badrinathvm",
+      "feedTitle": "Stories by Badarinath Venkatnarayansetty on Medium",
+      "status": "fulfilled",
+      "durationMs": 92038,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://ciechanow.ski/atom.xml",
+      "feedTitle": "Bartosz Ciechanowski",
+      "status": "fulfilled",
+      "durationMs": 998,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://kunat.dev/tags/ios/index.xml",
+      "feedTitle": "IOS on kunat.dev",
+      "status": "fulfilled",
+      "durationMs": 39476,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@londeix",
+      "feedTitle": "Stories by Bartosz Polaczyk on Medium",
+      "status": "fulfilled",
+      "durationMs": 996,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.basbroek.nl/feed.xml",
+      "feedTitle": "Bas’ Blog",
+      "status": "fulfilled",
+      "durationMs": 401,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@batikansosun",
+      "feedTitle": "Stories by Batikan Sosun on Medium",
+      "status": "fulfilled",
+      "durationMs": 691,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.beckyhansmeyer.com/category/general/feed/",
+      "feedTitle": "General – Becky Hansmeyer",
+      "status": "fulfilled",
+      "durationMs": 762,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://bendodson.com/rss.xml",
+      "feedTitle": "Ben Dodson's Weblog - Freelance Apple Developer",
+      "status": "fulfilled",
+      "durationMs": 30430,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@bengilroy",
+      "feedTitle": "Stories by Ben Gilroy on Medium",
+      "status": "fulfilled",
+      "durationMs": 347,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://benscheirman.com/feed.xml",
+      "feedTitle": "Ben Scheirman",
+      "status": "fulfilled",
+      "durationMs": 685,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://benjaminscholtysik.com/feed/",
+      "feedTitle": "Ben Scholtysik",
+      "status": "fulfilled",
+      "durationMs": 400,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.bensnider.com/feeds/all.atom.xml",
+      "feedTitle": "Bens Log",
+      "status": "fulfilled",
+      "durationMs": 629,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://benoitpasquier.com/index.xml",
+      "feedTitle": "Benoit Pasquier",
+      "status": "fulfilled",
+      "durationMs": 326,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@bertadevant",
+      "feedTitle": "Stories by Berta Devant on Medium",
+      "status": "fulfilled",
+      "durationMs": 193,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@almalehdev",
+      "feedTitle": "Stories by Besher Al Maleh on Medium",
+      "status": "fulfilled",
+      "durationMs": 254,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://bitsplitting.org/feed/",
+      "feedTitle": "Bitsplitting.org",
+      "status": "fulfilled",
+      "durationMs": 593,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://amiantos.net/tags/programming/feed/",
+      "feedTitle": "programming – amiantos.net",
+      "status": "fulfilled",
+      "durationMs": 1024,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://worrydream.com/feed.xml",
+      "feedTitle": "Bret Victor's website",
+      "status": "fulfilled",
+      "durationMs": 202,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://brevans.io/index.php/feed/",
+      "feedTitle": "brevansio",
+      "status": "fulfilled",
+      "durationMs": 1343,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://briancoyner.github.io/feed.rss",
+      "feedTitle": "Brian Coyner",
+      "status": "fulfilled",
+      "durationMs": 322,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://brightdigit.com/tutorials.rss",
+      "feedTitle": "BrightDigit",
+      "status": "fulfilled",
+      "durationMs": 68255,
+      "analyzedItems": 3,
+      "relevantPostCount": 2
+    },
+    {
+      "feedUrl": "https://irace.me/feed.xml",
+      "feedTitle": "Bryan Irace",
+      "status": "fulfilled",
+      "durationMs": 480,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://bryce.co/index.xml",
+      "feedTitle": "Bryce Bostwick",
+      "status": "fulfilled",
+      "durationMs": 223,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://thomas.zoechling.me/journal/feed.xml",
+      "feedTitle": "Build and Run",
+      "status": "fulfilled",
+      "durationMs": 335,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://build.ms/feed.xml",
+      "feedTitle": "Build.ms",
+      "status": "fulfilled",
+      "durationMs": 51960,
+      "analyzedItems": 3,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://byla.lt/feed.rss",
+      "feedTitle": "Byla.lt",
+      "status": "fulfilled",
+      "durationMs": 960,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cabel.com/feed/",
+      "feedTitle": "cabel.com",
+      "status": "fulfilled",
+      "durationMs": 9340,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://calincrist.com/feed.atom",
+      "status": "rejected",
+      "durationMs": 593,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 525 for https://calincrist.com/feed.atom"
+    },
+    {
+      "feedUrl": "http://blog.wilshipley.com/rss.xml",
+      "feedTitle": "Call Me Fishmeal.",
+      "status": "fulfilled",
+      "durationMs": 702,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://captainswiftui.substack.com/feed",
+      "feedTitle": "Captain SwiftUI",
+      "status": "fulfilled",
+      "durationMs": 135732,
+      "analyzedItems": 9,
+      "relevantPostCount": 2
+    },
+    {
+      "feedUrl": "https://carpeaqua.com/rss/",
+      "feedTitle": "carpeaqua",
+      "status": "fulfilled",
+      "durationMs": 312,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.carsonkatri.com/feed.rss",
+      "status": "rejected",
+      "durationMs": 244,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://www.carsonkatri.com/feed.rss"
+    },
+    {
+      "feedUrl": "https://cassiuspacheco.com/rss.xml",
+      "feedTitle": "Cassius Pacheco",
+      "status": "fulfilled",
+      "durationMs": 1270,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cdf1982.com/feed.xml",
+      "status": "rejected",
+      "durationMs": 386,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://cdf1982.com/feed.xml"
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@cecilia.humlelu",
+      "feedTitle": "Stories by Cecilia Humlelu on Medium",
+      "status": "fulfilled",
+      "durationMs": 331,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.cephalopod.studio/blog?format=rss",
+      "status": "rejected",
+      "durationMs": 484,
+      "relevantPostCount": 0,
+      "error": "Failed to parse feed contents from https://www.cephalopod.studio/blog?format=rss"
+    },
+    {
+      "feedUrl": "https://charliemchapman.com/feed.xml",
+      "feedTitle": "Charlie Chapman",
+      "status": "fulfilled",
+      "durationMs": 458,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@jpmtech",
+      "feedTitle": "Stories by Chase on Medium",
+      "status": "fulfilled",
+      "durationMs": 438,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.dzombak.com/blog/rss/",
+      "feedTitle": "Chris Dzombak",
+      "status": "fulfilled",
+      "durationMs": 246192,
+      "analyzedItems": 15,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://chris.eidhof.nl/index.xml",
+      "feedTitle": "Chris Eidhof",
+      "status": "fulfilled",
+      "durationMs": 88550,
+      "analyzedItems": 4,
+      "relevantPostCount": 2
+    },
+    {
+      "feedUrl": "https://chrishefferman.squarespace.com/blog?format=rss",
+      "feedTitle": "Chris_Blog - Chris Hefferman",
+      "status": "fulfilled",
+      "durationMs": 950,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/chrismarshallny",
+      "feedTitle": "ChrisMarshallNY - Medium",
+      "status": "fulfilled",
+      "durationMs": 1411,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@chris-mash",
+      "feedTitle": "Stories by Chris Mash on Medium",
+      "status": "fulfilled",
+      "durationMs": 506,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/@SaezChristopher/feed",
+      "feedTitle": "Stories by Christopher Saez 📱 on Medium",
+      "status": "fulfilled",
+      "durationMs": 81169,
+      "analyzedItems": 5,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@CWinstanley90",
+      "feedTitle": "Stories by Chris Winstanley on Medium",
+      "status": "fulfilled",
+      "durationMs": 309,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://chriswu.com/index.xml",
+      "feedTitle": "Chris Wu",
+      "status": "fulfilled",
+      "durationMs": 110882,
+      "analyzedItems": 6,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://christianselig.com/index.xml",
+      "feedTitle": "Christian Selig",
+      "status": "fulfilled",
+      "durationMs": 105417,
+      "analyzedItems": 5,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://christiantietze.de/feed.atom",
+      "feedTitle": "Worklog: Articles and Blog Posts by Christian Tietze",
+      "status": "fulfilled",
+      "durationMs": 468282,
+      "analyzedItems": 20,
+      "relevantPostCount": 2
+    },
+    {
+      "feedUrl": "http://ioscoachfrank.com/feed/atom.xml",
+      "feedTitle": "iOS Coach Frank",
+      "status": "fulfilled",
+      "durationMs": 944,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://www.cimgf.com/feed/",
+      "feedTitle": "Cocoa Is My Girlfriend",
+      "status": "fulfilled",
+      "durationMs": 1109,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cocoasamurai.blogspot.com/feeds/posts/default",
+      "feedTitle": "Cocoa Samurai",
+      "status": "fulfilled",
+      "durationMs": 384,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.cocoawithlove.com/feed.xml?alt=rss",
+      "feedTitle": "Cocoa with Love",
+      "status": "fulfilled",
+      "durationMs": 1216,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cocoacasts.com/feed.rss",
+      "feedTitle": "Cocoacasts",
+      "status": "fulfilled",
+      "durationMs": 40516,
+      "analyzedItems": 4,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.cocoanetics.com/feed/",
+      "feedTitle": "Cocoanetics",
+      "status": "fulfilled",
+      "durationMs": 27352,
+      "analyzedItems": 2,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://robnapier.net/atom.xml",
+      "feedTitle": "Cocoaphony",
+      "status": "fulfilled",
+      "durationMs": 385,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://codakuma.com/feed.xml",
+      "feedTitle": "Codakuma",
+      "status": "fulfilled",
+      "durationMs": 372,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.thecodehub.ie/news/feed/",
+      "feedTitle": "The Code Hub",
+      "status": "fulfilled",
+      "durationMs": 1083,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://codeworkshop.net/feed",
+      "status": "rejected",
+      "durationMs": 85,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for http://codeworkshop.net/feed"
+    },
+    {
+      "feedUrl": "https://codecookread.com/feed/",
+      "status": "rejected",
+      "durationMs": 251,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://codecookread.com/feed/"
+    },
+    {
+      "feedUrl": "https://roxana-nagy.com/rss/",
+      "status": "rejected",
+      "durationMs": 791,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://roxana-nagy.com/rss/"
+    },
+    {
+      "feedUrl": "https://www.codingwithjeff.org/feed.xml",
+      "feedTitle": "Coding with Jeff",
+      "status": "fulfilled",
+      "durationMs": 446,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://codingwithvera.com/rss/",
+      "feedTitle": "Coding With Vera",
+      "status": "fulfilled",
+      "durationMs": 15408,
+      "analyzedItems": 2,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cctplus.dev/rss/",
+      "feedTitle": "CCT+",
+      "status": "fulfilled",
+      "durationMs": 436,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://collin.blog/feed/",
+      "feedTitle": "Collin Donnell",
+      "status": "fulfilled",
+      "durationMs": 128264,
+      "analyzedItems": 10,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://componentskit.io/blog/rss.xml",
+      "feedTitle": "ComponentsKit Blog",
+      "status": "fulfilled",
+      "durationMs": 10938,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://conradstoll.com/blog?format=RSS",
+      "feedTitle": "Conrad Stoll",
+      "status": "fulfilled",
+      "durationMs": 848,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@consbulaquena",
+      "feedTitle": "Stories by Cons Bulaquena on Medium",
+      "status": "fulfilled",
+      "durationMs": 436,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://contagious.dev/blog/category/ios/feed/",
+      "feedTitle": "iOS | contagious.dev - Dan Griffin",
+      "status": "fulfilled",
+      "durationMs": 2970,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://markltownsend.com/rss.xml",
+      "status": "rejected",
+      "durationMs": 10003,
+      "relevantPostCount": 0,
+      "error": "Fetching feed timed out after 10000ms: https://markltownsend.com/rss.xml"
+    },
+    {
+      "feedUrl": "https://corybohon.com/categories/software-development/feed.xml",
+      "feedTitle": "Software Development on Cory Bohon",
+      "status": "fulfilled",
+      "durationMs": 584,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.createwithswift.com/rss/",
+      "feedTitle": "Create with Swift",
+      "status": "fulfilled",
+      "durationMs": 280032,
+      "analyzedItems": 15,
+      "relevantPostCount": 2
+    },
+    {
+      "feedUrl": "https://alisoftware.github.io/feed.xml",
+      "feedTitle": "Crunchy Development",
+      "status": "fulfilled",
+      "durationMs": 333,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cutting.io/feed.xml",
+      "feedTitle": "cutting.io",
+      "status": "fulfilled",
+      "durationMs": 747,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://cyndichin.github.io/feed.xml",
+      "feedTitle": "Cyndi Chin",
+      "status": "fulfilled",
+      "durationMs": 335,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@toupper",
+      "feedTitle": "Stories by César Vargas Casaseca on Medium",
+      "status": "fulfilled",
+      "durationMs": 428,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://accessibilityupto11.com/index.xml",
+      "status": "rejected",
+      "durationMs": 296,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 404 for https://accessibilityupto11.com/index.xml"
+    },
+    {
+      "feedUrl": "https://damian.fyi/feed.xml",
+      "feedTitle": "Damian Mehers’ blog",
+      "status": "fulfilled",
+      "durationMs": 14330,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://danielgauthier.me/feed.xml",
+      "feedTitle": "Daniel Gauthier",
+      "status": "fulfilled",
+      "durationMs": 566,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://danloman.com/feed.xml",
+      "status": "rejected",
+      "durationMs": 257,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://danloman.com/feed.xml"
+    },
+    {
+      "feedUrl": "https://ikennd.ac/atom.xml",
+      "feedTitle": "Daniel Kennett",
+      "status": "fulfilled",
+      "durationMs": 46095,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@sofaracing",
+      "feedTitle": "Stories by Daniel Leivers on Medium",
+      "status": "fulfilled",
+      "durationMs": 516,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://danielsaidi.com/feed.xml",
+      "feedTitle": "Daniel Saidi",
+      "status": "fulfilled",
+      "durationMs": 307571,
+      "analyzedItems": 13,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@danielt1263",
+      "feedTitle": "Stories by Daniel Tartaglia on Medium",
+      "status": "fulfilled",
+      "durationMs": 389,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://dev.to/feed/vibrazy",
+      "feedTitle": "DEV Community: Daniel Tavares",
+      "status": "fulfilled",
+      "durationMs": 1205,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://danieltull.co.uk/feed.xml",
+      "feedTitle": "Daniel Tull",
+      "status": "fulfilled",
+      "durationMs": 1429,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.danielemargutti.com/atom.xml",
+      "feedTitle": "Daniele Margutti",
+      "status": "fulfilled",
+      "durationMs": 12219,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://danijelavrzan.com/feed.rss",
+      "feedTitle": "Danijela's blog",
+      "status": "fulfilled",
+      "durationMs": 38049,
+      "analyzedItems": 3,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.darrylbayliss.net/feeds/ios.xml",
+      "feedTitle": {
+        "$": {
+          "type": "html"
+        }
+      },
+      "status": "rejected",
+      "durationMs": 481,
+      "relevantPostCount": 0,
+      "error": "Cannot convert object to primitive value"
+    },
+    {
+      "feedUrl": "https://dasdom.dev/feed.xml",
+      "feedTitle": "dasdom.dev",
+      "status": "fulfilled",
+      "durationMs": 7093,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://davedelong.com/feed.xml",
+      "feedTitle": "Dave DeLong",
+      "status": "fulfilled",
+      "durationMs": 1075,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.dribin.org/dave/blog/feed.xml",
+      "feedTitle": "Dave Dribin’s Blog",
+      "status": "fulfilled",
+      "durationMs": 865,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://daveverwer.com/feed.xml",
+      "feedTitle": "Dave Verwer’s Blog",
+      "status": "fulfilled",
+      "durationMs": 300,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://dcordero.me/feed.xml",
+      "feedTitle": "David Cordero",
+      "status": "fulfilled",
+      "durationMs": 346,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.davidahouse.com/feed.xml",
+      "feedTitle": "davidahouse.com",
+      "status": "fulfilled",
+      "durationMs": 586,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@HeyDaveTheDev",
+      "feedTitle": "Stories by David Piper on Medium",
+      "status": "fulfilled",
+      "durationMs": 646,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.davidseek.com/_feather/rss.xml",
+      "feedTitle": "\n     Tech Insights and Tips by an Amazon Senior Software Engineer \n  ",
+      "status": "fulfilled",
+      "durationMs": 364,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://dejal.com/blog/feed/",
+      "feedTitle": "Dejal",
+      "status": "fulfilled",
+      "durationMs": 13309,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://david-smith.org/atom.xml",
+      "feedTitle": "David Smith, Independent iOS Developer",
+      "status": "fulfilled",
+      "durationMs": 203801,
+      "analyzedItems": 10,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://vknobelsdorff.de/atom.xml",
+      "status": "rejected",
+      "durationMs": 353,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://vknobelsdorff.de/atom.xml"
+    },
+    {
+      "feedUrl": "https://david.y4ng.fr/atom.xml",
+      "feedTitle": "David Yang",
+      "status": "fulfilled",
+      "durationMs": 443,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://dazeend.org/feed/?cat=-12",
+      "feedTitle": "DazeEnd.org",
+      "status": "fulfilled",
+      "durationMs": 668,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://deprogrammaticaipsum.com/index.xml",
+      "feedTitle": "De Programmatica Ipsum",
+      "status": "fulfilled",
+      "durationMs": 245319,
+      "analyzedItems": 10,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://belkadan.com/blog/atom",
+      "feedTitle": "-dealloc",
+      "status": "fulfilled",
+      "durationMs": 46374,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://blog.thomasdurand.fr/index.xml",
+      "feedTitle": "Dean’s blog",
+      "status": "fulfilled",
+      "durationMs": 332,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://denzhadanov.com/feed",
+      "feedTitle": "denzhadanov - Medium",
+      "status": "fulfilled",
+      "durationMs": 517,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://rderik.com/feed.xml",
+      "feedTitle": "RDerik",
+      "status": "fulfilled",
+      "durationMs": 656,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://deurell.github.io/index.xml",
+      "feedTitle": "Deurell Labs",
+      "status": "fulfilled",
+      "durationMs": 250,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "http://devetc.org/feed.xml",
+      "feedTitle": "dev etc",
+      "status": "fulfilled",
+      "durationMs": 582,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://nachbaur.com/posts/index.xml",
+      "feedTitle": "Development with Alex Nachbaur",
+      "status": "fulfilled",
+      "durationMs": 415,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.devfright.com/feed/",
+      "feedTitle": "DevFright",
+      "status": "fulfilled",
+      "durationMs": 975,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@peterlivesey",
+      "feedTitle": "Stories by Peter Livesey on Medium",
+      "status": "fulfilled",
+      "durationMs": 481,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://diggingdeveloper.blog/feed/",
+      "feedTitle": "Digging Developer",
+      "status": "fulfilled",
+      "durationMs": 387,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://digitalbunker.dev/rss/",
+      "feedTitle": "Digital Bunker",
+      "status": "fulfilled",
+      "durationMs": 8461,
+      "analyzedItems": 1,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://dimsumthinking.com/rss.xml",
+      "feedTitle": "Dim Sum Thinking",
+      "status": "rejected",
+      "durationMs": 296840,
+      "relevantPostCount": 0,
+      "error": "Failed to parse Ollama JSON response: Unexpected non-whitespace character after JSON at position 88 (line 3 column 1)"
+    },
+    {
+      "feedUrl": "https://dchakarov.com/feed.xml",
+      "feedTitle": "Dimi Chakarov",
+      "status": "fulfilled",
+      "durationMs": 116613,
+      "analyzedItems": 3,
+      "relevantPostCount": 1
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@dino-bozic",
+      "feedTitle": "Stories by Dino Bozic on Medium",
+      "status": "fulfilled",
+      "durationMs": 521,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://holtwick.de/atom.xml",
+      "feedTitle": "Dirk Holtwick",
+      "status": "fulfilled",
+      "durationMs": 428,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.thedododeveloper.com/feed",
+      "feedTitle": "The Dodo Developer",
+      "status": "fulfilled",
+      "durationMs": 663,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://dodogames.io/feed.xml",
+      "status": "rejected",
+      "durationMs": 357,
+      "relevantPostCount": 0,
+      "error": "Feed responded with HTTP 403 for https://dodogames.io/feed.xml"
+    },
+    {
+      "feedUrl": "https://domz.co.uk/feed.rss",
+      "status": "rejected",
+      "durationMs": 40,
+      "relevantPostCount": 0,
+      "error": "Failed to fetch feed: https://domz.co.uk/feed.rss"
+    },
+    {
+      "feedUrl": "https://dev.to/feed/donniejp",
+      "feedTitle": "DEV Community: donnie-jp",
+      "status": "fulfilled",
+      "durationMs": 589,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.donnywals.com/feed/",
+      "feedTitle": "Donny Wals",
+      "status": "fulfilled",
+      "durationMs": 112232,
+      "analyzedItems": 10,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://vision.rodeo/feed/feed.xml",
+      "feedTitle": "Donovan’s Vision Blog",
+      "status": "fulfilled",
+      "durationMs": 491,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://douglashill.co/feed.json",
+      "status": "rejected",
+      "durationMs": 405,
+      "relevantPostCount": 0,
+      "error": "Failed to parse feed contents from https://douglashill.co/feed.json"
+    },
+    {
+      "feedUrl": "https://www.drawingyourownconclusions.com/feed.xml",
+      "feedTitle": "Drawing Your Own Conclusions",
+      "status": "fulfilled",
+      "durationMs": 398,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://medium.com/feed/@drewmccormack",
+      "feedTitle": "Stories by Drew McCormack on Medium",
+      "status": "fulfilled",
+      "durationMs": 650,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    },
+    {
+      "feedUrl": "https://www.dusantadic.dev/index.xml",
+      "feedTitle": "Dušan Tadić",
+      "status": "fulfilled",
+      "durationMs": 496,
+      "analyzedItems": 0,
+      "relevantPostCount": 0
+    }
+  ]
+}
