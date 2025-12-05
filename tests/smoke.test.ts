@@ -113,6 +113,12 @@ describe("parseArguments", () => {
     });
   });
 
+  it("parses --perf-log argument", () => {
+    expect(parseArguments(["--perf-log", "perf.json"])).toEqual({
+      perfLog: "perf.json",
+    });
+  });
+
   it("parses --months when provided", () => {
     expect(parseArguments(["--months", "6"])).toEqual({ months: 6 });
   });
@@ -389,6 +395,69 @@ describe("main", () => {
         onVerboseMessage: expect.any(Function),
       }),
     );
+  });
+
+  it("writes performance log when --perf-log is provided", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed", "https://example.com/feed-two"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      {
+        feedUrl: "https://example.com/feed",
+        status: "fulfilled",
+        feed: { title: "Example One", items: [] },
+        durationMs: 1200,
+        analyzedItems: 2,
+        relevantPosts: [
+          {
+            title: "AI news",
+            link: "https://example.com/post",
+            analysis: { relevant: true, rawResponse: "{}", reason: "AI" },
+          },
+        ],
+      },
+      {
+        feedUrl: "https://example.com/feed-two",
+        status: "rejected",
+        durationMs: 800,
+        error: new Error("timeout"),
+      },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+    let currentTime = 0;
+    const now = () => {
+      currentTime += 500;
+      return currentTime;
+    };
+
+    await main({
+      argv: ["--perf-log", "perf.json"],
+      stdout: stdout.writer,
+      stderr: stderr.writer,
+      env: {},
+      now,
+    });
+
+    expect(mockedWriteFile).toHaveBeenCalledTimes(1);
+    const [filePath, payload] = mockedWriteFile.mock.calls[0];
+    expect(filePath).toBe("perf.json");
+    const parsed = JSON.parse(String(payload));
+    expect(parsed.summary.totalFeeds).toBe(2);
+    expect(parsed.summary.failed).toBe(1);
+    expect(parsed.parameters.source).toBe("directory");
+    expect(parsed.feeds).toHaveLength(2);
+    const firstFeed = parsed.feeds[0];
+    expect(firstFeed.feedUrl).toBe("https://example.com/feed");
+    expect(firstFeed.relevantPostCount).toBe(1);
+    const secondFeed = parsed.feeds[1];
+    expect(secondFeed.feedUrl).toBe("https://example.com/feed-two");
+    expect(secondFeed.error).toBe("timeout");
+    expect(stdout.messages.join("")).toContain("Performance log saved to perf.json");
+    const stderrText = stderr.messages.join("");
+    expect(stderrText).toContain("Failed feeds");
+    expect(stderrText).toContain("timeout");
+    expect(process.exitCode).toBe(1);
   });
 
   it("writes JSON output to a file when --output is provided", async () => {

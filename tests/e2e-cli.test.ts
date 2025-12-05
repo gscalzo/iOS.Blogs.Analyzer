@@ -135,4 +135,30 @@ describe("CLI end-to-end", () => {
     expect(stderr.messages).toHaveLength(0);
     await fs.rm(tempDir, { recursive: true, force: true });
   });
+
+  it("writes performance log output when requested", async () => {
+    const stdout = createWriter();
+    const stderr = createWriter();
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ios-blogs-perf-"));
+    const perfLogPath = path.join(tempDir, "perf.json");
+
+    await main({
+      argv: ["--max-blogs", "1", "--perf-log", perfLogPath],
+      stdout: stdout.writer,
+      stderr: stderr.writer,
+      env: {},
+    });
+
+    const perfContents = await fs.readFile(perfLogPath, "utf8");
+    const payload = JSON.parse(perfContents);
+    expect(payload.summary.totalFeeds).toBe(1);
+    expect(payload.summary.failed).toBe(0);
+    expect(payload.parameters.parallel).toBe(3);
+    expect(payload.feeds).toHaveLength(1);
+    expect(payload.feeds[0].feedUrl).toBe("https://integration.example/feed");
+    expect(payload.feeds[0].status).toBe("fulfilled");
+    expect(stdout.messages.join("")).toContain(`Performance log saved to ${perfLogPath}`);
+    expect(stderr.messages).toHaveLength(0);
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
 });

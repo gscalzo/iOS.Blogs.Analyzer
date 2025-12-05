@@ -294,7 +294,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 6. ✅ Draft plan for integrating retry/backoff logic with configurable limits
 7. ✅ Kick off Phase 4: design parallel processing strategy
 8. ✅ Integrate progress output into CLI and estimate remaining work (Phase 4.2)
-9. Evaluate performance characteristics across feed sizes (Phase 4.3)
+9. 🔄 Evaluate performance characteristics across feed sizes (Phase 4.3) *(perf log instrumentation added; awaiting real-data run)*
 10. Plan integration of Ollama analysis results into progress stream
 11. Prototype end-to-end integration wiring feeds, Ollama analysis, and output pipeline
 12. Implement CLI output formatting and export modes (Phase 5.2)
@@ -574,6 +574,21 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 **Next Session**:
 - With filters configurable, run longer sessions against the real `blogs.json` to confirm the category allow-list meets expectations and capture any missing titles for the default config template.
 - Exercise the retry workflow on another machine to ensure proxy-related failures can be isolated easily.
+
+### Session 18: 2025-12-05 - Phase 6 Performance Logging
+**Status**: 🔄 In Progress
+
+**Completed**:
+- Added `--perf-log <file>` CLI flag, plus helper utilities, to persist per-feed durations, analyzed counts, and statuses for each run so we can benchmark different `--parallel` / `--max-blogs` combinations.
+- Captured the run metadata (filters, source, retry info, averages) inside the perf log payload and surfaced success/failure summaries in the file for faster analysis.
+- Documented the new workflow in README and covered it with new smoke + e2e tests to keep the CLI feature set regression-safe.
+
+**Issues Encountered**:
+- Live performance evaluation is still blocked without an accessible Ollama daemon; the new logging will be exercised once a real-data environment is available.
+
+**Next Session**:
+- Run the CLI against progressively larger slices of `blogs.json` (using live Ollama) while emitting perf logs to determine the optimal `--parallel` defaults and capture trend data.
+- Compare perf log outputs across runs to document tuning guidance in README/plan and finish Phase 4.3 benchmarking requirements.
 
 ---
 

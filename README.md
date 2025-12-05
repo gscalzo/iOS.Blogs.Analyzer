@@ -27,6 +27,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 | `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
 | `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
 | `--failed-log <file>` | Save failed feed URLs (and their errors) to a JSON file for later retries. |
+| `--perf-log <file>` | Persist per-feed performance metrics (durations, analyzed item counts, statuses) to a JSON file for benchmarking. |
 | `--retry-file <file>` | Skip `blogs.json` and analyze the feed URLs from a previous failed-log JSON file. |
 | `--help` | Show inline help. |
 
@@ -46,6 +47,9 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 
 # Stress-test concurrency with 5 workers and a different model
 IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
+
+# Capture per-feed performance metrics for later analysis
+./run.sh -- --max-blogs 25 --parallel 5 --perf-log perf-log.json
 ```
 
 ### Configuration Notes
@@ -54,6 +58,7 @@ IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
 - **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
 - **Failure retries**: Pass `--failed-log failed-feeds.json` to capture any feed errors (the file includes both `failedFeeds` and the full success payload). Later you can re-run just those feeds with `--retry-file failed-feeds.json`, which is handy if you need to process them on another machine or with a different network setup.
+- **Performance benchmarking**: Use `--perf-log perf.json` to dump per-feed durations, analyzed counts, and status/error data so you can compare different `--parallel`, `--months`, or filtering combinations over time.
 - **Language & category filtering**: Edit `config/filter-config.json` to control which languages and category titles are allowed. By default only the English (`"en"`) group is processed; the `allowedCategories` list acts as an allow-list—delete entries to exclude categories from future runs.
 - **Blog subset**: `--max-blogs` is the fastest way to run smoke tests without touching the huge `blogs.json`.
 - **Time window**: `--months` controls the cutoff for `publishedAt` filtering before any Ollama calls fire, keeping the session cost down.

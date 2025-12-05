@@ -3,7 +3,7 @@ import yargs, { type ArgumentsCamelCase } from "yargs";
 import { extractFeedUrls, loadBlogs } from "./blogs.js";
 import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysisResult, type RelevantPost } from "./analyzer.js";
 import { OllamaClient } from "./ollama-client.js";
-import { loadFilterConfig } from "./config.js";
+import { loadFilterConfig, type NormalizedFilterConfig } from "./config.js";
 
 export type OutputFormat = "json" | "csv";
 
@@ -22,6 +22,7 @@ export interface CliArguments {
   months?: number;
   failedLog?: string;
   retryFile?: string;
+  perfLog?: string;
 }
 
 export interface MainOptions {
@@ -67,6 +68,7 @@ export function parseArguments(argv: string[]): CliArguments {
     months?: number;
     failedLog?: string;
     retryFile?: string;
+    perfLog?: string;
   };
 
   const parser = yargs(filteredArgv)
@@ -103,6 +105,10 @@ export function parseArguments(argv: string[]): CliArguments {
     .option("failed-log", {
       type: "string",
       describe: "Write failed feed URLs to the specified file",
+    })
+    .option("perf-log", {
+      type: "string",
+      describe: "Write per-feed performance metrics to the specified file",
     })
     .option("retry-file", {
       type: "string",
@@ -190,6 +196,14 @@ export function parseArguments(argv: string[]): CliArguments {
     result.retryFile = trimmed;
   }
 
+  if (typeof parsed.perfLog === "string") {
+    const trimmed = parsed.perfLog.trim();
+    if (trimmed.length === 0) {
+      throw new CliError("--perf-log must be a non-empty string");
+    }
+    result.perfLog = trimmed;
+  }
+
   return result;
 }
 
@@ -253,6 +267,7 @@ function renderHelp(): string {
     "                              e.g., --output csv:report.csv",
     "  --verbose, -v           Enable verbose logging",
     "  --failed-log <file>     Write failed feed URLs to a JSON file",
+    "  --perf-log <file>       Write per-feed performance metrics to a JSON file",
     "  --retry-file <file>     Re-run using feed URLs from a failed-log JSON file",
     "  -h, --help              Show this help message",
     "",
@@ -476,6 +491,105 @@ async function writeFailedFeedLog(
   stdout.write(`Failed feeds saved to ${destination}\n`);
 }
 
+type PerformanceLogSource = "directory" | "retry-file";
+
+interface PerformanceLogEntry {
+  feedUrl: string;
+  feedTitle?: string;
+  status: FeedAnalysisResult["status"];
+  durationMs?: number;
+  analyzedItems?: number;
+  relevantPostCount?: number;
+  error?: string;
+}
+
+interface PerformanceLogPayload {
+  generatedAt: string;
+  parameters: {
+    parallel: number;
+    months: number;
+    maxBlogs?: number;
+    source: PerformanceLogSource;
+    retryFile?: string;
+    feedCount: number;
+    filters?: {
+      languages: string[];
+      categories?: string[];
+    };
+  };
+  summary: {
+    totalFeeds: number;
+    succeeded: number;
+    failed: number;
+    elapsedMs: number;
+    averageDurationMs?: number;
+  };
+  feeds: PerformanceLogEntry[];
+}
+
+function buildPerformanceLogPayload(
+  results: FeedAnalysisResult[],
+  context: {
+    generatedAt: Date;
+    elapsedMs: number;
+    averageDurationMs?: number;
+    parallel: number;
+    months: number;
+    maxBlogs?: number;
+    source: PerformanceLogSource;
+    retryFile?: string;
+    feedCount: number;
+    filterConfig?: NormalizedFilterConfig;
+    succeededCount: number;
+    failedCount: number;
+  },
+): PerformanceLogPayload {
+  const entries: PerformanceLogEntry[] = results.map((result) => ({
+    feedUrl: result.feedUrl,
+    feedTitle: result.feed?.title ?? undefined,
+    status: result.status,
+    durationMs: result.durationMs,
+    analyzedItems: result.analyzedItems,
+    relevantPostCount: result.relevantPosts?.length ?? 0,
+    error: result.status === "rejected" ? result.error?.message ?? "Unknown error" : undefined,
+  }));
+
+  return {
+    generatedAt: context.generatedAt.toISOString(),
+    parameters: {
+      parallel: context.parallel,
+      months: context.months,
+      maxBlogs: context.maxBlogs,
+      source: context.source,
+      retryFile: context.retryFile,
+      feedCount: context.feedCount,
+      filters: context.filterConfig
+        ? {
+            languages: context.filterConfig.allowedLanguages,
+            categories: context.filterConfig.allowedCategories,
+          }
+        : undefined,
+    },
+    summary: {
+      totalFeeds: results.length,
+      succeeded: context.succeededCount,
+      failed: context.failedCount,
+      elapsedMs: context.elapsedMs,
+      averageDurationMs: context.averageDurationMs,
+    },
+    feeds: entries,
+  };
+}
+
+async function writePerformanceLog(
+  destination: string,
+  payload: PerformanceLogPayload,
+  stdout: NonNullable<MainOptions["stdout"]>,
+): Promise<void> {
+  await writeFile(destination, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  stdout.write(`Performance log saved to ${destination}\n`);
+}
+
 async function loadRetryFeedsFromFile(filePath: string): Promise<string[]> {
   let raw: string;
   try {
@@ -586,10 +700,13 @@ export async function main(options: MainOptions = {}): Promise<void> {
   }
 
   const months = cliArguments.months ?? DEFAULT_MONTH_WINDOW;
+  let filterConfig: NormalizedFilterConfig | undefined;
+  let feedSource: PerformanceLogSource = "directory";
 
   try {
     let feeds: string[] = [];
     if (cliArguments.retryFile) {
+      feedSource = "retry-file";
       feeds = await loadRetryFeedsFromFile(cliArguments.retryFile);
       if (cliArguments.maxBlogs !== undefined) {
         feeds = feeds.slice(0, cliArguments.maxBlogs);
@@ -597,7 +714,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
       stdout.write(`Loaded ${feeds.length} feed URLs from retry file ${cliArguments.retryFile}.\n`);
     } else {
       const blogs = await loadBlogs();
-      const filterConfig = await loadFilterConfig();
+      filterConfig = await loadFilterConfig();
       feeds = extractFeedUrls(blogs, {
         maxBlogs: cliArguments.maxBlogs,
         languages: filterConfig.allowedLanguages,
@@ -652,7 +769,8 @@ export async function main(options: MainOptions = {}): Promise<void> {
       clock: now,
     });
 
-    const elapsedMs = now() - startedAt;
+    const finishedAt = now();
+    const elapsedMs = finishedAt - startedAt;
     const { succeeded, failed, averageDurationMs } = summarize(results);
     const averageText = averageDurationMs !== undefined ? ` avg ${formatShortDuration(averageDurationMs)}` : "";
     stdout.write(
@@ -693,6 +811,31 @@ export async function main(options: MainOptions = {}): Promise<void> {
         await writeFailedFeedLog(failureEntries, cliArguments.failedLog, stdout);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unable to write failed feed log";
+        stderr.write(`Error: ${message}\n`);
+        process.exitCode = 1;
+      }
+    }
+
+    if (cliArguments.perfLog) {
+      try {
+        const timestamp = Number.isFinite(finishedAt) ? finishedAt : Date.now();
+        const payload = buildPerformanceLogPayload(results, {
+          generatedAt: new Date(timestamp),
+          elapsedMs,
+          averageDurationMs,
+          parallel: cliArguments.parallel ?? DEFAULT_PARALLEL,
+          months,
+          maxBlogs: cliArguments.maxBlogs,
+          source: feedSource,
+          retryFile: cliArguments.retryFile,
+          feedCount: total,
+          filterConfig,
+          succeededCount: succeeded.length,
+          failedCount: failed.length,
+        });
+        await writePerformanceLog(cliArguments.perfLog, payload, stdout);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unable to write performance log";
         stderr.write(`Error: ${message}\n`);
         process.exitCode = 1;
       }
