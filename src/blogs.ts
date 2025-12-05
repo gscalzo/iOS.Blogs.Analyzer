@@ -57,10 +57,12 @@ export async function loadBlogs(options: LoadBlogsOptions = {}): Promise<BlogsDi
 export interface ExtractFeedUrlsOptions {
   maxBlogs?: number;
   language?: string;
+  languages?: readonly string[];
+  categories?: readonly string[];
 }
 
 export function extractFeedUrls(blogs: BlogsDirectory, options: ExtractFeedUrlsOptions = {}): string[] {
-  const { maxBlogs, language } = options;
+  const { maxBlogs, language, languages, categories } = options;
 
   if (maxBlogs !== undefined) {
     if (!Number.isInteger(maxBlogs) || maxBlogs < 0) {
@@ -69,13 +71,21 @@ export function extractFeedUrls(blogs: BlogsDirectory, options: ExtractFeedUrlsO
   }
 
   const feeds: string[] = [];
+  const languageFilter = createNormalizedSet(languages ?? (language ? [language] : undefined));
+  const categoryFilter = createNormalizedSet(categories);
 
   for (const group of blogs) {
-    if (language && group.language !== language) {
+    const groupLanguage = typeof group.language === "string" ? group.language.toLowerCase() : "";
+    if (languageFilter && !languageFilter.has(groupLanguage)) {
       continue;
     }
 
     for (const category of group.categories) {
+      const categoryTitle = typeof category.title === "string" ? category.title.toLowerCase() : "";
+      if (categoryFilter && !categoryFilter.has(categoryTitle)) {
+        continue;
+      }
+
       for (const site of category.sites) {
         feeds.push(site.feed_url);
         if (maxBlogs !== undefined && feeds.length >= maxBlogs) {
@@ -146,4 +156,23 @@ function normalizeSiteUrls(site: BlogSite): BlogSite {
   }
 
   return normalized;
+}
+
+function createNormalizedSet(values?: readonly string[]): Set<string> | undefined {
+  if (!values || values.length === 0) {
+    return undefined;
+  }
+
+  const set = new Set<string>();
+  for (const value of values) {
+    if (typeof value !== "string") {
+      continue;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      continue;
+    }
+    set.add(trimmed.toLowerCase());
+  }
+  return set.size > 0 ? set : undefined;
 }

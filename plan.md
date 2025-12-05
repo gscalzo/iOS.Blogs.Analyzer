@@ -559,6 +559,20 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Use the enhanced `-v` mode during real-data verification to capture per-feed telemetry for documentation.
 - Evaluate whether additional output formats (Markdown/HTML) are still desired after CSV adoption.
 
+### Session 17: 2025-12-05 - Phase 6 Language & Category Filters
+**Status**: ✅ Complete
+
+**Completed**:
+- Added `config/filter-config.json` plus a loader so the CLI automatically restricts runs to English feeds and a category allow-list that the user can edit by removing titles.
+- Extended `extractFeedUrls` with multi-language and category filtering, passed the settings through the CLI, and updated smoke/e2e/blog tests accordingly.
+- Documented the new configuration pathway in README so future runs can easily toggle categories without code changes.
+
+**Issues Encountered**:
+- None.
+
+**Next Session**:
+- With filters configurable, run longer sessions against the real `blogs.json` to confirm the category allow-list meets expectations and capture any missing titles for the default config template.
+
 ---
 
 ## Notes

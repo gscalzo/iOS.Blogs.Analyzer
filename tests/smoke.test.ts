@@ -4,6 +4,7 @@ import { main, parseArguments } from "../src/index.js";
 import type { BlogsDirectory } from "../src/types.js";
 import { extractFeedUrls, loadBlogs } from "../src/blogs.js";
 import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL } from "../src/analyzer.js";
+import { loadFilterConfig } from "../src/config.js";
 
 const { ollamaFactory } = vi.hoisted(() => ({
   ollamaFactory: {
@@ -23,12 +24,14 @@ vi.mock("../src/analyzer.js");
 vi.mock("../src/ollama-client.js", () => ({
   OllamaClient: vi.fn(() => ollamaFactory.createInstance()),
 }));
+vi.mock("../src/config.js");
 
 const mockedWriteFile = vi.mocked(writeFile);
 
 const mockedLoadBlogs = vi.mocked(loadBlogs);
 const mockedExtractFeedUrls = vi.mocked(extractFeedUrls);
 const mockedAnalyzeFeeds = vi.mocked(analyzeFeeds);
+const mockedLoadFilterConfig = vi.mocked(loadFilterConfig);
 
 function createWriter() {
   const messages: string[] = [];
@@ -139,6 +142,7 @@ describe("main", () => {
     vi.resetAllMocks();
     process.exitCode = 0;
     mockedWriteFile.mockReset();
+    mockedLoadFilterConfig.mockResolvedValue({ allowedLanguages: ["en"], allowedCategories: undefined });
     ollamaFactory.createInstance = () => ({
       checkConnection: vi.fn().mockResolvedValue(true),
       analyze: vi.fn().mockResolvedValue({ relevant: false, rawResponse: "{}" }),
@@ -183,7 +187,11 @@ describe("main", () => {
     await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
 
     expect(mockedLoadBlogs).toHaveBeenCalledTimes(1);
-    expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: undefined });
+    expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, {
+      maxBlogs: undefined,
+      languages: ["en"],
+      categories: undefined,
+    });
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       ["https://example.com/feed"],
       expect.objectContaining({
@@ -193,7 +201,7 @@ describe("main", () => {
       }),
     );
     const stdoutText = stdout.messages.join("");
-    expect(stdoutText).toContain("Loaded 1 feed URLs.");
+    expect(stdoutText).toContain("Loaded 1 feed URLs (languages: en; categories: all categories).");
     expect(stdoutText).toMatch(/\[1\/1\] OK https:\/\/example.com\/feed/);
     expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed in 00:00 avg 1.2s/);
     expect(stdoutText).toContain('"feeds"');
@@ -215,7 +223,11 @@ describe("main", () => {
 
     await main({ argv: ["--max-blogs", "1"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
-    expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: 1 });
+    expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, {
+      maxBlogs: 1,
+      languages: ["en"],
+      categories: undefined,
+    });
     expect(mockedAnalyzeFeeds).toHaveBeenCalled();
   });
 

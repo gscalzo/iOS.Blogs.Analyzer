@@ -51,6 +51,7 @@ IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
 - **Ollama model**: defaults to `llama3.1`. Override via `--model <name>` or `IOS_BLOGS_ANALYZER_MODEL`.
 - **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
+- **Language & category filtering**: Edit `config/filter-config.json` to control which languages and category titles are allowed. By default only the English (`"en"`) group is processed; the `allowedCategories` list acts as an allow-list—delete entries to exclude categories from future runs.
 - **Blog subset**: `--max-blogs` is the fastest way to run smoke tests without touching the huge `blogs.json`.
 - **Time window**: `--months` controls the cutoff for `publishedAt` filtering before any Ollama calls fire, keeping the session cost down.
 - **Parallelism**: The async pool is capped by `--parallel` (default 3) to avoid overwhelming local Ollama.

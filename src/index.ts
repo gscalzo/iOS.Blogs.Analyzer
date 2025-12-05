@@ -3,6 +3,7 @@ import yargs, { type ArgumentsCamelCase } from "yargs";
 import { extractFeedUrls, loadBlogs } from "./blogs.js";
 import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysisResult, type RelevantPost } from "./analyzer.js";
 import { OllamaClient } from "./ollama-client.js";
+import { loadFilterConfig } from "./config.js";
 
 export type OutputFormat = "json" | "csv";
 
@@ -466,8 +467,15 @@ export async function main(options: MainOptions = {}): Promise<void> {
 
   try {
     const blogs = await loadBlogs();
-    const feeds = extractFeedUrls(blogs, { maxBlogs: cliArguments.maxBlogs });
-    stdout.write(`Loaded ${feeds.length} feed URLs.\n`);
+    const filterConfig = await loadFilterConfig();
+    const feeds = extractFeedUrls(blogs, {
+      maxBlogs: cliArguments.maxBlogs,
+      languages: filterConfig.allowedLanguages,
+      categories: filterConfig.allowedCategories,
+    });
+    const languageSummary = filterConfig.allowedLanguages.length > 0 ? filterConfig.allowedLanguages.join(", ") : "all";
+    const categorySummary = filterConfig.allowedCategories ? `${filterConfig.allowedCategories.length} categories` : "all categories";
+    stdout.write(`Loaded ${feeds.length} feed URLs (languages: ${languageSummary}; categories: ${categorySummary}).\n`);
 
     if (feeds.length === 0) {
       stdout.write("No feeds to process.\n");

@@ -3,6 +3,7 @@ import path from "node:path";
 import os from "node:os";
 import * as fs from "node:fs/promises";
 import { main } from "../src/index.js";
+import { loadFilterConfig } from "../src/config.js";
 
 const fixturesDir = path.resolve(process.cwd(), "tests/fixtures");
 const blogsFixturePath = path.join(fixturesDir, "blogs-mini.json");
@@ -55,6 +56,12 @@ vi.mock("../src/blogs.js", async (importOriginal) => {
   };
 });
 
+vi.mock("../src/config.js", () => ({
+  loadFilterConfig: vi.fn(),
+}));
+
+const mockedLoadFilterConfig = vi.mocked(loadFilterConfig);
+
 function createWriter() {
   const messages: string[] = [];
   return {
@@ -70,6 +77,7 @@ function createWriter() {
 
 describe("CLI end-to-end", () => {
   beforeEach(async () => {
+    mockedLoadFilterConfig.mockResolvedValue({ allowedLanguages: ["en"], allowedCategories: ["indie"] });
     const rss = await fs.readFile(rssFixturePath, "utf8");
     const fetchMock = vi.fn(async () => new Response(rss, { status: 200, headers: { "content-type": "application/xml" } }));
     vi.stubGlobal("fetch", fetchMock);
@@ -96,7 +104,7 @@ describe("CLI end-to-end", () => {
     await main({ argv: ["--max-blogs", "1", "--verbose"], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
 
     const stdoutText = stdout.messages.join("");
-    expect(stdoutText).toContain("Loaded 1 feed URLs.");
+    expect(stdoutText).toContain("Loaded 1 feed URLs (languages: en; categories: 1 categories).");
     expect(stdoutText).toContain("Processing with up to 3 concurrent requests");
     expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed/);
     expect(stdoutText).toContain('"feeds"');

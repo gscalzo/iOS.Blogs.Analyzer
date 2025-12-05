@@ -64,6 +64,23 @@ describe("extractFeedUrls", () => {
     const blogs = await loadBlogs({ filePath: sampleFilePath });
 
     expect(extractFeedUrls(blogs, { language: "es" })).toEqual(["https://es.example.com/feed"]);
+    expect(extractFeedUrls(blogs, { languages: ["EN"] })).toEqual([
+      "https://sample.example.com/feed",
+      "https://secondary.example.com/rss",
+      "https://third.example.com/rss",
+    ]);
+  });
+
+  it("filters feeds by category allowlist", async () => {
+    const blogs = await loadBlogs({ filePath: sampleFilePath });
+
+    expect(extractFeedUrls(blogs, { categories: ["Platform"] })).toEqual([
+      "https://sample.example.com/feed",
+      "https://secondary.example.com/rss",
+      "https://third.example.com/rss",
+    ]);
+
+    expect(extractFeedUrls(blogs, { categories: ["Noticias"] })).toEqual(["https://es.example.com/feed"]);
   });
 
   it("throws when maxBlogs is negative", async () => {
