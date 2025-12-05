@@ -25,8 +25,19 @@ ensure_dependencies() {
   fi
 }
 
+ensure_blogs_file() {
+  if [[ -n "${IOS_BLOGS_SKIP_DOWNLOAD:-}" ]]; then
+    return
+  fi
+
+  if [[ -x "${ROOT_DIR}/scripts/download-blogs.mjs" ]]; then
+    node "${ROOT_DIR}/scripts/download-blogs.mjs"
+  fi
+}
+
 run_cli() {
   ensure_dependencies
+  ensure_blogs_file
   if [[ $# -gt 0 && $1 == "--" ]]; then
     shift
   fi
@@ -38,11 +49,13 @@ run_cli() {
 
 run_tests() {
   ensure_dependencies
+  ensure_blogs_file
   npx vitest run
 }
 
 build_project() {
   ensure_dependencies
+  ensure_blogs_file
   npm run build
 }
 

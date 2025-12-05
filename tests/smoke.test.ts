@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { main, parseArguments } from "../src/index.js";
 import type { BlogsDirectory } from "../src/types.js";
 import { extractFeedUrls, loadBlogs } from "../src/blogs.js";
@@ -17,6 +17,7 @@ const { ollamaFactory } = vi.hoisted(() => ({
 
 vi.mock("node:fs/promises", () => ({
   writeFile: vi.fn().mockResolvedValue(undefined),
+  readFile: vi.fn().mockResolvedValue(""),
 }));
 
 vi.mock("../src/blogs.js");
@@ -27,6 +28,7 @@ vi.mock("../src/ollama-client.js", () => ({
 vi.mock("../src/config.js");
 
 const mockedWriteFile = vi.mocked(writeFile);
+const mockedReadFile = vi.mocked(readFile);
 
 const mockedLoadBlogs = vi.mocked(loadBlogs);
 const mockedExtractFeedUrls = vi.mocked(extractFeedUrls);
@@ -104,6 +106,13 @@ describe("parseArguments", () => {
     expect(parseArguments(["-v"])).toEqual({ verbose: true });
   });
 
+  it("parses failed-log and retry-file arguments", () => {
+    expect(parseArguments(["--failed-log", "failed.json", "--retry-file", "retry.json"])).toEqual({
+      failedLog: "failed.json",
+      retryFile: "retry.json",
+    });
+  });
+
   it("parses --months when provided", () => {
     expect(parseArguments(["--months", "6"])).toEqual({ months: 6 });
   });
@@ -142,6 +151,8 @@ describe("main", () => {
     vi.resetAllMocks();
     process.exitCode = 0;
     mockedWriteFile.mockReset();
+    mockedReadFile.mockReset();
+    mockedReadFile.mockResolvedValue("");
     mockedLoadFilterConfig.mockResolvedValue({ allowedLanguages: ["en"], allowedCategories: undefined });
     ollamaFactory.createInstance = () => ({
       checkConnection: vi.fn().mockResolvedValue(true),
@@ -404,8 +415,47 @@ describe("main", () => {
 
     await main({ argv: ["--output", "results.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
-    expect(mockedWriteFile).toHaveBeenCalledWith("results.json", expect.stringContaining('"feeds"'), "utf8");
+    const payload = mockedWriteFile.mock.calls[0][1];
+    expect(payload).toContain('"feeds"');
+    expect(payload).toContain('"failedFeeds"');
+    expect(mockedWriteFile).toHaveBeenCalledWith("results.json", payload, "utf8");
     expect(stdout.messages.join("")).toContain("Results written to results.json");
+  });
+
+  it("loads feeds from a retry file when --retry-file is set", async () => {
+    mockedReadFile.mockResolvedValueOnce(JSON.stringify({ failedFeeds: [{ feedUrl: "https://retry.example/feed" }] }));
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://retry.example/feed", status: "fulfilled", feed: { title: "Retry", items: [] }, durationMs: 100 },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--retry-file", "failed.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedLoadBlogs).not.toHaveBeenCalled();
+    expect(mockedExtractFeedUrls).not.toHaveBeenCalled();
+    expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
+      ["https://retry.example/feed"],
+      expect.objectContaining({ months: DEFAULT_MONTH_WINDOW }),
+    );
+    expect(stdout.messages.join("")).toContain("Loaded 1 feed URLs from retry file failed.json.");
+  });
+
+  it("writes failed feed log when requested", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "rejected", error: new Error("boom") },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--failed-log", "failed.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedWriteFile).toHaveBeenCalledWith("failed.json", expect.stringContaining('"failedFeeds"'), "utf8");
+    expect(stdout.messages.join("")).toContain("Failed feeds saved to failed.json");
   });
 
   it("writes CSV output to a file when --output csv:<path> is provided", async () => {

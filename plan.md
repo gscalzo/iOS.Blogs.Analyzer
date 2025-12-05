@@ -566,12 +566,14 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Added `config/filter-config.json` plus a loader so the CLI automatically restricts runs to English feeds and a category allow-list that the user can edit by removing titles.
 - Extended `extractFeedUrls` with multi-language and category filtering, passed the settings through the CLI, and updated smoke/e2e/blog tests accordingly.
 - Documented the new configuration pathway in README so future runs can easily toggle categories without code changes.
+- Added `--failed-log` to persist failed feed URLs (with errors) and `--retry-file` to re-run those feeds elsewhere; the JSON report now includes `failedFeeds` so retries can use the regular output as well.
 
 **Issues Encountered**:
 - None.
 
 **Next Session**:
 - With filters configurable, run longer sessions against the real `blogs.json` to confirm the category allow-list meets expectations and capture any missing titles for the default config template.
+- Exercise the retry workflow on another machine to ensure proxy-related failures can be isolated easily.
 
 ---
 

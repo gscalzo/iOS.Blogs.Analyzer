@@ -1,4 +1,4 @@
-import { writeFile } from "node:fs/promises";
+import { writeFile, readFile } from "node:fs/promises";
 import yargs, { type ArgumentsCamelCase } from "yargs";
 import { extractFeedUrls, loadBlogs } from "./blogs.js";
 import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysisResult, type RelevantPost } from "./analyzer.js";
@@ -20,6 +20,8 @@ export interface CliArguments {
   output?: OutputTarget;
   verbose?: boolean;
   months?: number;
+  failedLog?: string;
+  retryFile?: string;
 }
 
 export interface MainOptions {
@@ -63,6 +65,8 @@ export function parseArguments(argv: string[]): CliArguments {
     output?: string;
     verbose?: boolean;
     months?: number;
+    failedLog?: string;
+    retryFile?: string;
   };
 
   const parser = yargs(filteredArgv)
@@ -95,6 +99,14 @@ export function parseArguments(argv: string[]): CliArguments {
     .option("verbose", {
       type: "boolean",
       describe: "Enable verbose logging",
+    })
+    .option("failed-log", {
+      type: "string",
+      describe: "Write failed feed URLs to the specified file",
+    })
+    .option("retry-file", {
+      type: "string",
+      describe: "Process feed URLs from a previous failed-log JSON file",
     })
     .alias("verbose", "v")
     .exitProcess(false)
@@ -162,6 +174,22 @@ export function parseArguments(argv: string[]): CliArguments {
     result.verbose = parsed.verbose;
   }
 
+  if (typeof parsed.failedLog === "string") {
+    const trimmed = parsed.failedLog.trim();
+    if (trimmed.length === 0) {
+      throw new CliError("--failed-log must be a non-empty string");
+    }
+    result.failedLog = trimmed;
+  }
+
+  if (typeof parsed.retryFile === "string") {
+    const trimmed = parsed.retryFile.trim();
+    if (trimmed.length === 0) {
+      throw new CliError("--retry-file must be a non-empty string");
+    }
+    result.retryFile = trimmed;
+  }
+
   return result;
 }
 
@@ -224,6 +252,8 @@ function renderHelp(): string {
     "  --output [format:]<target>  Choose output format (json|csv) and optional file",
     "                              e.g., --output csv:report.csv",
     "  --verbose, -v           Enable verbose logging",
+    "  --failed-log <file>     Write failed feed URLs to a JSON file",
+    "  --retry-file <file>     Re-run using feed URLs from a failed-log JSON file",
     "  -h, --help              Show this help message",
     "",
   ].join("\n");
@@ -286,6 +316,11 @@ interface FeedReport {
   relevantPosts: PostReport[];
 }
 
+interface FailedFeedEntry {
+  feedUrl: string;
+  error?: string;
+}
+
 interface PostReport {
   title: string;
   link: string;
@@ -312,12 +347,20 @@ function buildFeedReports(results: FeedAnalysisResult[]): FeedReport[] {
     }));
 }
 
+function buildFailedFeedEntries(failed: FeedAnalysisResult[]): FailedFeedEntry[] {
+  return failed.map((item) => ({
+    feedUrl: item.feedUrl,
+    error: item.error?.message ?? "Unknown error",
+  }));
+}
+
 async function emitJsonReport(
   reports: FeedReport[],
+  failedFeeds: FailedFeedEntry[],
   destination: string | undefined,
   stdout: NonNullable<MainOptions["stdout"]>,
 ): Promise<void> {
-  const payload = JSON.stringify({ feeds: reports }, null, 2);
+  const payload = JSON.stringify({ feeds: reports, failedFeeds }, null, 2);
 
   if (destination) {
     await writeFile(destination, `${payload}\n`, "utf8");
@@ -423,6 +466,85 @@ function formatShortDuration(milliseconds: number): string {
   return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
 }
 
+async function writeFailedFeedLog(
+  entries: FailedFeedEntry[],
+  destination: string,
+  stdout: NonNullable<MainOptions["stdout"]>,
+): Promise<void> {
+  const payload = JSON.stringify({ failedFeeds: entries }, null, 2);
+  await writeFile(destination, `${payload}\n`, "utf8");
+  stdout.write(`Failed feeds saved to ${destination}\n`);
+}
+
+async function loadRetryFeedsFromFile(filePath: string): Promise<string[]> {
+  let raw: string;
+  try {
+    raw = await readFile(filePath, "utf8");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    throw new CliError(`Unable to read retry file at ${filePath}: ${message}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+    throw new CliError(`Retry file ${filePath} is not valid JSON: ${message}`);
+  }
+
+  const feeds = extractFeedUrlsFromRetryPayload(parsed);
+  if (feeds.length === 0) {
+    throw new CliError(`Retry file ${filePath} did not contain any feed URLs`);
+  }
+  return feeds;
+}
+
+function extractFeedUrlsFromRetryPayload(payload: unknown): string[] {
+  const collected: string[] = [];
+  const pushUrl = (candidate: unknown) => {
+    const normalized = normalizeFeedUrlCandidate(candidate);
+    if (normalized) {
+      collected.push(normalized);
+    }
+  };
+
+  if (Array.isArray(payload)) {
+    for (const item of payload) {
+      pushUrl(item);
+    }
+  } else if (payload && typeof payload === "object") {
+    const record = payload as Record<string, unknown>;
+    if (Array.isArray(record.failedFeeds)) {
+      for (const entry of record.failedFeeds) {
+        pushUrl(entry);
+      }
+    }
+
+    if (Array.isArray(record.feeds)) {
+      for (const entry of record.feeds) {
+        pushUrl(entry);
+      }
+    }
+  }
+
+  return Array.from(new Set(collected));
+}
+
+function normalizeFeedUrlCandidate(value: unknown): string | undefined {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  if (value && typeof value === "object" && typeof (value as { feedUrl?: unknown }).feedUrl === "string") {
+    const trimmed = ((value as { feedUrl: string }).feedUrl ?? "").trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  return undefined;
+}
+
 export async function main(options: MainOptions = {}): Promise<void> {
   const {
     argv = process.argv.slice(2),
@@ -466,16 +588,28 @@ export async function main(options: MainOptions = {}): Promise<void> {
   const months = cliArguments.months ?? DEFAULT_MONTH_WINDOW;
 
   try {
-    const blogs = await loadBlogs();
-    const filterConfig = await loadFilterConfig();
-    const feeds = extractFeedUrls(blogs, {
-      maxBlogs: cliArguments.maxBlogs,
-      languages: filterConfig.allowedLanguages,
-      categories: filterConfig.allowedCategories,
-    });
-    const languageSummary = filterConfig.allowedLanguages.length > 0 ? filterConfig.allowedLanguages.join(", ") : "all";
-    const categorySummary = filterConfig.allowedCategories ? `${filterConfig.allowedCategories.length} categories` : "all categories";
-    stdout.write(`Loaded ${feeds.length} feed URLs (languages: ${languageSummary}; categories: ${categorySummary}).\n`);
+    let feeds: string[] = [];
+    if (cliArguments.retryFile) {
+      feeds = await loadRetryFeedsFromFile(cliArguments.retryFile);
+      if (cliArguments.maxBlogs !== undefined) {
+        feeds = feeds.slice(0, cliArguments.maxBlogs);
+      }
+      stdout.write(`Loaded ${feeds.length} feed URLs from retry file ${cliArguments.retryFile}.\n`);
+    } else {
+      const blogs = await loadBlogs();
+      const filterConfig = await loadFilterConfig();
+      feeds = extractFeedUrls(blogs, {
+        maxBlogs: cliArguments.maxBlogs,
+        languages: filterConfig.allowedLanguages,
+        categories: filterConfig.allowedCategories,
+      });
+      const languageSummary =
+        filterConfig.allowedLanguages.length > 0 ? filterConfig.allowedLanguages.join(", ") : "all";
+      const categorySummary = filterConfig.allowedCategories
+        ? `${filterConfig.allowedCategories.length} categories`
+        : "all categories";
+      stdout.write(`Loaded ${feeds.length} feed URLs (languages: ${languageSummary}; categories: ${categorySummary}).\n`);
+    }
 
     if (feeds.length === 0) {
       stdout.write("No feeds to process.\n");
@@ -535,6 +669,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
     }
 
     const reports = buildFeedReports(succeeded);
+    const failureEntries = buildFailedFeedEntries(failed);
     if (cliArguments.verbose) {
       logVerboseFindings(reports, stdout);
     }
@@ -545,12 +680,22 @@ export async function main(options: MainOptions = {}): Promise<void> {
       if (outputTarget.format === "csv") {
         await emitCsvReport(reports, outputTarget.destination, stdout);
       } else {
-        await emitJsonReport(reports, outputTarget.destination, stdout);
+        await emitJsonReport(reports, failureEntries, outputTarget.destination, stdout);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to write results";
       stderr.write(`Error: ${message}\n`);
       process.exitCode = 1;
+    }
+
+    if (cliArguments.failedLog) {
+      try {
+        await writeFailedFeedLog(failureEntries, cliArguments.failedLog, stdout);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unable to write failed feed log";
+        stderr.write(`Error: ${message}\n`);
+        process.exitCode = 1;
+      }
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";

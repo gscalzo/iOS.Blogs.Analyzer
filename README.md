@@ -1,6 +1,6 @@
 # iOS Blogs Analyzer
 
-A TypeScript CLI that scans the curated `blogs.json` directory of iOS blogs, fetches each RSS/Atom feed, and uses a local Ollama model to highlight posts about AI-powered mobile development.
+An opinionated TypeScript CLI for iOS developers who want a daily radar on AI innovation. It downloads the latest `blogs.json` from Dave Verwer’s [iOS Dev Directory](https://iosdevdirectory.com) (repo: https://github.com/daveverwer/iOSDevDirectory — Dave also publishes [iOS Dev Weekly](https://iosdevweekly.com/)), fetches every RSS/Atom feed, and pipelines each post through a local Ollama model so you instantly see which articles move the needle for AI/ML-powered mobile work. With configurable language/category filters, CSV/JSON exports, failure-retry support, and verbose telemetry, it’s a self-hosted newsroom tailored to your iOS + AI interests.
 
 ## Prerequisites
 
@@ -26,6 +26,8 @@ A TypeScript CLI that scans the curated `blogs.json` directory of iOS blogs, fet
 | `--model <name>` | Override the Ollama model (`IOS_BLOGS_ANALYZER_MODEL`). |
 | `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
 | `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
+| `--failed-log <file>` | Save failed feed URLs (and their errors) to a JSON file for later retries. |
+| `--retry-file <file>` | Skip `blogs.json` and analyze the feed URLs from a previous failed-log JSON file. |
 | `--help` | Show inline help. |
 
 ## Output Formats
@@ -36,7 +38,7 @@ A TypeScript CLI that scans the curated `blogs.json` directory of iOS blogs, fet
 ### Usage Examples
 
 ```bash
-# Analyze just 5 feeds with verbose summaries and JSON output to disk
+# Pull the latest directory (run.sh handles this automatically), analyze 5 feeds with verbose summaries, and write JSON
 ./run.sh -- --max-blogs 5 --verbose --output results.json
 
 # Export the last 2 months of posts to CSV and read from stdout
@@ -51,6 +53,7 @@ IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
 - **Ollama model**: defaults to `llama3.1`. Override via `--model <name>` or `IOS_BLOGS_ANALYZER_MODEL`.
 - **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
+- **Failure retries**: Pass `--failed-log failed-feeds.json` to capture any feed errors (the file includes both `failedFeeds` and the full success payload). Later you can re-run just those feeds with `--retry-file failed-feeds.json`, which is handy if you need to process them on another machine or with a different network setup.
 - **Language & category filtering**: Edit `config/filter-config.json` to control which languages and category titles are allowed. By default only the English (`"en"`) group is processed; the `allowedCategories` list acts as an allow-list—delete entries to exclude categories from future runs.
 - **Blog subset**: `--max-blogs` is the fastest way to run smoke tests without touching the huge `blogs.json`.
 - **Time window**: `--months` controls the cutoff for `publishedAt` filtering before any Ollama calls fire, keeping the session cost down.
@@ -79,3 +82,7 @@ High-level responsibilities are described in [`ARCHITECTURE.md`](ARCHITECTURE.md
 ## Testing Scope
 
 The Vitest suite exercises RSS parsing edge cases, Ollama retry logic, concurrency controls, CLI argument validation, CSV/JSON output generation, and an end-to-end pipeline that mocks Ollama responses while using real feed parsing.
+
+## Data Source
+
+The feed directory comes directly from Dave Verwer's [iOS Dev Directory](https://iosdevdirectory.com) (code on GitHub: https://github.com/daveverwer/iOSDevDirectory). Dave also publishes [iOS Dev Weekly](https://iosdevweekly.com/) and curates the directory continuously, so we download a fresh `blogs.json` before each run to stay current.
