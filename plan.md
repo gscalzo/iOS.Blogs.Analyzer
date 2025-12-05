@@ -6,8 +6,8 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 ## Current Status: 🟡 Phase 5 In Progress
 
-**Last Updated**: 2025-11-12  
-**Current Session**: Phase 5 Argument Parsing
+**Last Updated**: 2025-12-05  
+**Current Session**: Phase 5 Output Formatting
 
 ---
 
@@ -150,18 +150,18 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Display help with `--help`
 
 #### 5.2 Output Formatting
-- [ ] Format results clearly:
+- [x] Format results clearly:
   - Blog title
   - Post title
   - Post link
   - Relevance score/reason
-- [ ] Support JSON output format
+- [x] Support JSON output format
 - [ ] Support CSV export
 
 #### 5.3 Tests
-- [ ] Test argument parsing
-- [ ] Test output formatting
-- [ ] Test various CLI combinations
+- [x] Test argument parsing
+- [x] Test output formatting
+- [x] Test various CLI combinations
 
 **Deliverables**: Polished CLI interface with flexible options
 
@@ -170,7 +170,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 ### Phase 6: Integration & Polish 🔲
 
 #### 6.1 End-to-End Integration
-- [ ] Connect all components
+- [x] Connect all components
 - [ ] Test complete workflow:
   1. Load blogs.json
   2. Fetch RSS feeds
@@ -491,6 +491,24 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 
 **Next Session**:
 - Implement CLI output formatting options and hook verbose/output flags into runtime behaviour
+
+### Session 13: 2025-12-05 - Phase 5 Output Integration
+**Status**: 🔄 In Progress
+
+**Completed**:
+- Added `--months` CLI filter and date-window enforcement before analysis
+- Implemented Ollama fail-fast connection check plus feed-level integration with relevance filtering
+- Added JSON report emission, optional file output, and verbose summaries highlighting relevant posts
+- Expanded smoke/analyzer tests to cover new CLI flags, JSON output writing, and analyzer post filtering
+
+**Issues Encountered**:
+- CSV export still outstanding for Phase 5.2
+- Need wider end-to-end validation against real blogs.json once Ollama is available locally
+
+**Next Session**:
+- Implement CSV export path and ensure `--output` can choose format
+- Add end-to-end integration tests covering the full pipeline with mocked Ollama responses
+- Start documentation updates for CLI usage and new flags
 
 ---
 

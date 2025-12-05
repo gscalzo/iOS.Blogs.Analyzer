@@ -1,6 +1,8 @@
+import { writeFile } from "node:fs/promises";
 import yargs, { type ArgumentsCamelCase } from "yargs";
 import { extractFeedUrls, loadBlogs } from "./blogs.js";
-import { analyzeFeeds, DEFAULT_PARALLEL, type FeedAnalysisResult } from "./analyzer.js";
+import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysisResult, type RelevantPost } from "./analyzer.js";
+import { OllamaClient } from "./ollama-client.js";
 
 export interface CliArguments {
   maxBlogs?: number;
@@ -9,6 +11,7 @@ export interface CliArguments {
   model?: string;
   output?: string;
   verbose?: boolean;
+  months?: number;
 }
 
 export interface MainOptions {
@@ -50,6 +53,7 @@ export function parseArguments(argv: string[]): CliArguments {
     model?: string;
     output?: string;
     verbose?: boolean;
+    months?: number;
   };
 
   const parser = yargs(filteredArgv)
@@ -66,6 +70,10 @@ export function parseArguments(argv: string[]): CliArguments {
     .option("parallel", {
       type: "number",
       describe: "Maximum concurrent requests",
+    })
+    .option("months", {
+      type: "number",
+      describe: `Analyze posts published within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
     })
     .option("model", {
       type: "string",
@@ -116,6 +124,14 @@ export function parseArguments(argv: string[]): CliArguments {
     result.parallel = value;
   }
 
+  if (parsed.months !== undefined) {
+    const value = parsed.months;
+    if (!Number.isFinite(value) || !Number.isInteger(value) || value <= 0) {
+      throw new CliError("--months must be a positive integer");
+    }
+    result.months = value;
+  }
+
   if (typeof parsed.model === "string") {
     const trimmed = parsed.model.trim();
     if (trimmed.length === 0) {
@@ -150,6 +166,7 @@ function renderHelp(): string {
     "  --max-blogs <number>   Limit the number of feeds processed",
     "  --parallel <number>    Maximum concurrent requests (default: 3)",
     "  --model <name>         Ollama model to use (default: llama3.1)",
+    `  --months <number>      Analyze posts within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
     "  --output <file>        Write results to a file instead of stdout",
     "  --verbose              Enable verbose logging",
     "  -h, --help              Show this help message",
@@ -208,6 +225,71 @@ function summarize(results: FeedAnalysisResult[]): {
   return { succeeded, failed, averageDurationMs };
 }
 
+interface FeedReport {
+  feedUrl: string;
+  feedTitle?: string;
+  relevantPosts: PostReport[];
+}
+
+interface PostReport {
+  title: string;
+  link: string;
+  publishedAt?: string;
+  confidence?: number;
+  reason?: string;
+  tags?: string[];
+}
+
+function buildFeedReports(results: FeedAnalysisResult[]): FeedReport[] {
+  return results
+    .filter((result) => Array.isArray(result.relevantPosts) && result.relevantPosts.length > 0)
+    .map((result) => ({
+      feedUrl: result.feedUrl,
+      feedTitle: result.feed?.title ?? undefined,
+      relevantPosts: (result.relevantPosts ?? []).map((post) => ({
+        title: post.title,
+        link: post.link,
+        publishedAt: post.publishedAt,
+        confidence: post.analysis.confidence,
+        reason: post.analysis.reason,
+        tags: post.analysis.tags,
+      })),
+    }));
+}
+
+async function emitJsonReport(
+  reports: FeedReport[],
+  destination: string | undefined,
+  stdout: NonNullable<MainOptions["stdout"]>,
+): Promise<void> {
+  const payload = JSON.stringify({ feeds: reports }, null, 2);
+
+  if (destination) {
+    await writeFile(destination, `${payload}\n`, "utf8");
+    stdout.write(`Results written to ${destination}\n`);
+    return;
+  }
+
+  stdout.write(`${payload}\n`);
+}
+
+function logVerboseFindings(reports: FeedReport[], stdout: NonNullable<MainOptions["stdout"]>): void {
+  if (reports.length === 0) {
+    stdout.write("No relevant posts detected.\n");
+    return;
+  }
+
+  stdout.write("Relevant posts:\n");
+  for (const report of reports) {
+    const feedLabel = report.feedTitle ?? report.feedUrl;
+    stdout.write(`- ${feedLabel}\n`);
+    for (const post of report.relevantPosts) {
+      const reason = post.reason ? ` - ${post.reason}` : "";
+      stdout.write(`    - ${post.title} (${post.link})${reason}\n`);
+    }
+  }
+}
+
 function formatShortDuration(milliseconds: number): string {
   if (!Number.isFinite(milliseconds)) {
     return "--";
@@ -256,6 +338,19 @@ export async function main(options: MainOptions = {}): Promise<void> {
     env[MODEL_ENV_VARIABLE] = cliArguments.model;
   }
 
+  const ollamaClient = new OllamaClient();
+
+  try {
+    await ollamaClient.checkConnection();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to connect to Ollama";
+    stderr.write(`Error: ${message}\n`);
+    process.exitCode = 1;
+    return;
+  }
+
+  const months = cliArguments.months ?? DEFAULT_MONTH_WINDOW;
+
   try {
     const blogs = await loadBlogs();
     const feeds = extractFeedUrls(blogs, { maxBlogs: cliArguments.maxBlogs });
@@ -272,6 +367,8 @@ export async function main(options: MainOptions = {}): Promise<void> {
 
     const results = await analyzeFeeds(feeds, {
       parallel: cliArguments.parallel ?? DEFAULT_PARALLEL,
+      months,
+      dependencies: { analysisClient: ollamaClient },
       onProgress(update) {
         const elapsedMs = now() - startedAt;
         const etaMs = estimateRemainingMs(update.completed, update.total, elapsedMs);
@@ -306,6 +403,19 @@ export async function main(options: MainOptions = {}): Promise<void> {
         const reason = item.error?.message ?? "Unknown error";
         stderr.write(`  - ${item.feedUrl}: ${reason}\n`);
       }
+      process.exitCode = 1;
+    }
+
+    const reports = buildFeedReports(succeeded);
+    if (cliArguments.verbose) {
+      logVerboseFindings(reports, stdout);
+    }
+
+    try {
+      await emitJsonReport(reports, cliArguments.output, stdout);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to write results";
+      stderr.write(`Error: ${message}\n`);
       process.exitCode = 1;
     }
   } catch (error) {

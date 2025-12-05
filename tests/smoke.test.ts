@@ -1,11 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { writeFile } from "node:fs/promises";
 import { main, parseArguments } from "../src/index.js";
 import type { BlogsDirectory } from "../src/types.js";
 import { extractFeedUrls, loadBlogs } from "../src/blogs.js";
-import { analyzeFeeds, DEFAULT_PARALLEL } from "../src/analyzer.js";
+import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL } from "../src/analyzer.js";
+
+const { ollamaFactory } = vi.hoisted(() => ({
+  ollamaFactory: {
+    createInstance: () => ({
+      checkConnection: vi.fn().mockResolvedValue(true),
+      analyze: vi.fn().mockResolvedValue({ relevant: false, rawResponse: "{}" }),
+    }),
+  },
+}));
+
+vi.mock("node:fs/promises", () => ({
+  writeFile: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock("../src/blogs.js");
 vi.mock("../src/analyzer.js");
+vi.mock("../src/ollama-client.js", () => ({
+  OllamaClient: vi.fn(() => ollamaFactory.createInstance()),
+}));
+
+const mockedWriteFile = vi.mocked(writeFile);
 
 const mockedLoadBlogs = vi.mocked(loadBlogs);
 const mockedExtractFeedUrls = vi.mocked(extractFeedUrls);
@@ -63,6 +82,10 @@ describe("parseArguments", () => {
     expect(parseArguments(["--output", "results.json", "--verbose"])).toEqual({ output: "results.json", verbose: true });
   });
 
+  it("parses --months when provided", () => {
+    expect(parseArguments(["--months", "6"])).toEqual({ months: 6 });
+  });
+
   it("marks help flag", () => {
     expect(parseArguments(["--help"])).toEqual({ helpRequested: true });
   });
@@ -82,12 +105,21 @@ describe("parseArguments", () => {
   it("rejects empty output values", () => {
     expect(() => parseArguments(["--output", " "])).toThrow(/--output must be a non-empty string/);
   });
+
+  it("rejects invalid --months values", () => {
+    expect(() => parseArguments(["--months", "0"])).toThrow(/--months must be a positive integer/);
+  });
 });
 
 describe("main", () => {
   beforeEach(() => {
     vi.resetAllMocks();
     process.exitCode = 0;
+    mockedWriteFile.mockReset();
+    ollamaFactory.createInstance = () => ({
+      checkConnection: vi.fn().mockResolvedValue(true),
+      analyze: vi.fn().mockResolvedValue({ relevant: false, rawResponse: "{}" }),
+    });
   });
 
   it("loads blogs, processes feeds, and prints progress", async () => {
@@ -107,6 +139,14 @@ describe("main", () => {
           status: "fulfilled",
           feed: { title: "Example", items: [] },
           durationMs: 1200,
+          relevantPosts: [
+            {
+              title: "AI in iOS",
+              link: "https://example.com/post",
+              publishedAt: "2025-11-01T00:00:00.000Z",
+              analysis: { relevant: true, rawResponse: "{}", reason: "Matches keywords" },
+            },
+          ],
         },
       ];
     });
@@ -123,14 +163,21 @@ describe("main", () => {
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, { maxBlogs: undefined });
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       ["https://example.com/feed"],
-      expect.objectContaining({ parallel: DEFAULT_PARALLEL }),
+      expect.objectContaining({
+        parallel: DEFAULT_PARALLEL,
+        months: DEFAULT_MONTH_WINDOW,
+        dependencies: expect.objectContaining({ analysisClient: expect.any(Object) }),
+      }),
     );
     const stdoutText = stdout.messages.join("");
     expect(stdoutText).toContain("Loaded 1 feed URLs.");
     expect(stdoutText).toMatch(/\[1\/1\] OK https:\/\/example.com\/feed/);
     expect(stdoutText).toMatch(/Finished 1 feeds: 1 succeeded, 0 failed in 00:00 avg 1.2s/);
+    expect(stdoutText).toContain('"feeds"');
+    expect(stdoutText).toContain('"AI in iOS"');
     expect(stderr.messages).toHaveLength(0);
     expect(process.exitCode).toBe(0);
+    expect(mockedWriteFile).not.toHaveBeenCalled();
   });
 
   it("respects --max-blogs argument", async () => {
@@ -179,6 +226,24 @@ describe("main", () => {
     );
   });
 
+  it("passes months argument through to analyzer", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 400 },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--months", "2"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.objectContaining({ months: 2 }),
+    );
+  });
+
   it("prints failures and sets exit code", async () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
@@ -220,6 +285,22 @@ describe("main", () => {
     expect(mockedAnalyzeFeeds).not.toHaveBeenCalled();
   });
 
+  it("fails fast when Ollama connection is unavailable", async () => {
+    ollamaFactory.createInstance = () => ({
+      checkConnection: vi.fn().mockRejectedValue(new Error("offline")),
+      analyze: vi.fn().mockResolvedValue({ relevant: false, rawResponse: "{}" }),
+    });
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(stderr.messages.join("")).toContain("offline");
+    expect(mockedLoadBlogs).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
+  });
+
   it("shows help when requested", async () => {
     const stdout = createWriter();
 
@@ -242,5 +323,33 @@ describe("main", () => {
     await main({ argv: ["--model", "qwq"], stdout: stdout.writer, stderr: createWriter().writer, env });
 
     expect(env.IOS_BLOGS_ANALYZER_MODEL).toBe("qwq");
+  });
+
+  it("writes JSON output to a file when --output is provided", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      {
+        feedUrl: "https://example.com/feed",
+        status: "fulfilled",
+        feed: { title: "Example", items: [] },
+        durationMs: 400,
+        relevantPosts: [
+          {
+            title: "AI in iOS",
+            link: "https://example.com/post",
+            analysis: { relevant: true, rawResponse: "{}" },
+          },
+        ],
+      },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--output", "results.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedWriteFile).toHaveBeenCalledWith("results.json", expect.stringContaining('"feeds"'), "utf8");
+    expect(stdout.messages.join("")).toContain("Results written to results.json");
   });
 });

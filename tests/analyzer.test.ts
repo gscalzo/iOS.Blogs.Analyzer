@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { analyzeFeeds, type FeedAnalysisResult } from "../src/analyzer.js";
+import type { AnalysisResult } from "../src/ollama-client.js";
 import type { ParsedFeed } from "../src/types.js";
 
 function delay(ms: number): Promise<void> {
@@ -8,6 +9,17 @@ function delay(ms: number): Promise<void> {
 
 function makeFeed(title: string): ParsedFeed {
   return { title, description: undefined, items: [] };
+}
+
+function makeAnalysis(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
+  return {
+    relevant: false,
+    rawResponse: "{}",
+    reason: undefined,
+    confidence: undefined,
+    tags: undefined,
+    ...overrides,
+  };
 }
 
 describe("analyzeFeeds", () => {
@@ -24,6 +36,7 @@ describe("analyzeFeeds", () => {
         active -= 1;
         return makeFeed(feedUrl);
       },
+      analysisClient: { analyze: vi.fn().mockResolvedValue(makeAnalysis()) },
     };
 
     const results = await analyzeFeeds(feeds, { parallel: 2, dependencies });
@@ -47,6 +60,7 @@ describe("analyzeFeeds", () => {
         await delay(feedUrl === "feed-late" ? 6 : 1);
         return makeFeed(feedUrl);
       },
+      analysisClient: { analyze: vi.fn().mockResolvedValue(makeAnalysis()) },
     };
 
     const results = await analyzeFeeds(feeds, {
@@ -89,6 +103,7 @@ describe("analyzeFeeds", () => {
         await delay(5);
         return makeFeed("feed");
       },
+      analysisClient: { analyze: vi.fn().mockResolvedValue(makeAnalysis()) },
     };
 
     const promise = analyzeFeeds(["feed-1", "feed-2"], { parallel: 1, dependencies, signal: controller.signal });
@@ -104,3 +119,45 @@ function summarize(results: FeedAnalysisResult[]): { fulfilled: FeedAnalysisResu
     rejected: results.filter((result) => result.status === "rejected"),
   };
 }
+
+describe("feed item analysis", () => {
+  const referenceNow = Date.parse("2025-12-05T00:00:00.000Z");
+
+  it("analyzes only recent posts and returns relevant ones", async () => {
+    const analyzeMock = vi
+      .fn()
+      .mockResolvedValueOnce(makeAnalysis({ relevant: true, reason: "Matches keywords" }))
+      .mockResolvedValue(makeAnalysis());
+
+    const dependencies = {
+      fetchFeed: async () => ({
+        title: "Example",
+        items: [
+          {
+            title: "Fresh post",
+            link: "https://example.com/fresh",
+            description: "AI in iOS",
+            publishedAt: "2025-11-01T00:00:00.000Z",
+          },
+          {
+            title: "Old post",
+            link: "https://example.com/old",
+            description: "Outdated",
+            publishedAt: "2024-01-01T00:00:00.000Z",
+          },
+        ],
+      }),
+      analysisClient: { analyze: analyzeMock },
+    };
+
+    const [result] = await analyzeFeeds(["https://example.com/feed"], {
+      dependencies,
+      months: 3,
+      clock: () => referenceNow,
+    });
+
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+    expect(result.relevantPosts).toHaveLength(1);
+    expect(result.relevantPosts?.[0].title).toBe("Fresh post");
+  });
+});
