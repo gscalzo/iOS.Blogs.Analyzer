@@ -95,6 +95,7 @@ export function parseArguments(argv: string[]): CliArguments {
       type: "boolean",
       describe: "Enable verbose logging",
     })
+    .alias("verbose", "v")
     .exitProcess(false)
     .help(false)
     .showHelpOnFail(false)
@@ -221,7 +222,7 @@ function renderHelp(): string {
     `  --months <number>      Analyze posts within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
     "  --output [format:]<target>  Choose output format (json|csv) and optional file",
     "                              e.g., --output csv:report.csv",
-    "  --verbose              Enable verbose logging",
+    "  --verbose, -v           Enable verbose logging",
     "  -h, --help              Show this help message",
     "",
   ].join("\n");
@@ -477,6 +478,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
     const startedAt = now();
     stdout.write(`Processing with up to ${cliArguments.parallel ?? DEFAULT_PARALLEL} concurrent requests...\n`);
 
+    const verboseEnabled = cliArguments.verbose === true;
     const results = await analyzeFeeds(feeds, {
       parallel: cliArguments.parallel ?? DEFAULT_PARALLEL,
       months,
@@ -499,6 +501,12 @@ export async function main(options: MainOptions = {}): Promise<void> {
 
         stdout.write(`${parts.join(" ")}\n`);
       },
+      onVerboseMessage: verboseEnabled
+        ? (entry) => {
+            const label = entry.feedTitle ?? entry.feedUrl;
+            stdout.write(`[VERBOSE] ${label} - ${entry.message}\n`);
+          }
+        : undefined,
       clock: now,
     });
 

@@ -59,6 +59,13 @@ export interface AnalyzeFeedsOptions {
   dependencies?: Partial<AnalyzerDependencies>;
   clock?: () => number;
   months?: number;
+  onVerboseMessage?: (entry: VerboseLogEntry) => void;
+}
+
+export interface VerboseLogEntry {
+  feedUrl: string;
+  feedTitle?: string;
+  message: string;
 }
 
 export async function analyzeFeeds(feedUrls: readonly string[], options: AnalyzeFeedsOptions = {}): Promise<FeedAnalysisResult[]> {
@@ -115,7 +122,12 @@ export async function analyzeFeeds(feedUrls: readonly string[], options: Analyze
         if (feed.items?.length) {
           const referenceDate = new Date(clock());
           const cutoffDate = subtractMonths(referenceDate, months);
-          const analysis = await analyzeFeedItems(feed.items, cutoffDate, dependencies.analysisClient);
+          const analysis = await analyzeFeedItems(feed.items, cutoffDate, dependencies.analysisClient, {
+            feedUrl,
+            feedTitle: feed.title ?? undefined,
+            months,
+            onVerboseMessage: options.onVerboseMessage,
+          });
           result.analyzedItems = analysis.analyzedCount;
           if (analysis.relevantPosts.length > 0) {
             result.relevantPosts = analysis.relevantPosts;
@@ -170,22 +182,47 @@ function subtractMonths(date: Date, months: number): Date {
   return result;
 }
 
+function emitVerbose(
+  options: { feedUrl: string; feedTitle?: string; onVerboseMessage?: (entry: VerboseLogEntry) => void },
+  message: string,
+): void {
+  if (!options.onVerboseMessage) {
+    return;
+  }
+
+  options.onVerboseMessage({
+    feedUrl: options.feedUrl,
+    feedTitle: options.feedTitle,
+    message,
+  });
+}
+
+function formatMonthsLabel(months: number): string {
+  const safeMonths = Math.max(1, months);
+  return `${safeMonths} month${safeMonths === 1 ? "" : "s"}`;
+}
+
 async function analyzeFeedItems(
   items: FeedItem[],
   cutoffDate: Date,
   analysisClient: AnalysisClient,
+  options: { feedUrl: string; feedTitle?: string; months: number; onVerboseMessage?: (entry: VerboseLogEntry) => void },
 ): Promise<{ analyzedCount: number; relevantPosts: RelevantPost[] }> {
   const relevantPosts: RelevantPost[] = [];
   let analyzedCount = 0;
 
-  for (const item of items) {
-    if (!shouldAnalyzeItem(item, cutoffDate)) {
-      continue;
-    }
+  const itemsWithinWindow = (items ?? []).filter((item) => shouldAnalyzeItem(item, cutoffDate));
+  emitVerbose(options, `Found ${itemsWithinWindow.length} posts within the last ${formatMonthsLabel(options.months)}.`);
 
+  for (const item of itemsWithinWindow) {
     if (!item.description) {
       continue;
     }
+
+    emitVerbose(
+      options,
+      `Analyzing post "${item.title}" (${item.link}) published ${item.publishedAt ?? "on an unknown date"}.`,
+    );
 
     analyzedCount += 1;
     const analysis = await analysisClient.analyze(item.description, { gracefulDegradation: true });

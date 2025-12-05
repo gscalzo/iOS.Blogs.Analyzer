@@ -25,7 +25,7 @@ A TypeScript CLI that scans the curated `blogs.json` directory of iOS blogs, fet
 | `--months <number>` | Only analyze posts from the last N months (default 3). |
 | `--model <name>` | Override the Ollama model (`IOS_BLOGS_ANALYZER_MODEL`). |
 | `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
-| `--verbose` | Print per-feed relevant post summaries. |
+| `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
 | `--help` | Show inline help. |
 
 ## Output Formats
@@ -50,6 +50,7 @@ IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
 
 - **Ollama model**: defaults to `llama3.1`. Override via `--model <name>` or `IOS_BLOGS_ANALYZER_MODEL`.
 - **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
+- **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
 - **Blog subset**: `--max-blogs` is the fastest way to run smoke tests without touching the huge `blogs.json`.
 - **Time window**: `--months` controls the cutoff for `publishedAt` filtering before any Ollama calls fire, keeping the session cost down.
 - **Parallelism**: The async pool is capped by `--parallel` (default 3) to avoid overwhelming local Ollama.

@@ -545,6 +545,20 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Capture real-world performance numbers (avg duration, failure rates) and tune defaults if needed.
 - Explore exporting richer summaries (Markdown/HTML) once real-data validation is complete.
 
+### Session 16: 2025-12-05 - Phase 6 Verbose Telemetry
+**Status**: ✅ Complete
+
+**Completed**:
+- Added `-v` alias for `--verbose`, extended analyzer plumbing to emit month-window counts plus per-item logs while feeds are processed, and wired those logs to the CLI output stream.
+- Updated README usage notes to reflect the enhanced verbose mode and expanded smoke/analyzer tests to cover the new behavior.
+
+**Issues Encountered**:
+- None.
+
+**Next Session**:
+- Use the enhanced `-v` mode during real-data verification to capture per-feed telemetry for documentation.
+- Evaluate whether additional output formats (Markdown/HTML) are still desired after CSV adoption.
+
 ---
 
 ## Notes

@@ -97,6 +97,10 @@ describe("parseArguments", () => {
     });
   });
 
+  it("supports -v alias for verbose logging", () => {
+    expect(parseArguments(["-v"])).toEqual({ verbose: true });
+  });
+
   it("parses --months when provided", () => {
     expect(parseArguments(["--months", "6"])).toEqual({ months: 6 });
   });
@@ -342,6 +346,26 @@ describe("main", () => {
     await main({ argv: ["--model", "qwq"], stdout: stdout.writer, stderr: createWriter().writer, env });
 
     expect(env.IOS_BLOGS_ANALYZER_MODEL).toBe("qwq");
+  });
+
+  it("passes verbose logging callback when --verbose is provided", async () => {
+    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
+    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
+    mockedAnalyzeFeeds.mockResolvedValue([
+      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 400 },
+    ]);
+
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--verbose"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
+      ["https://example.com/feed"],
+      expect.objectContaining({
+        onVerboseMessage: expect.any(Function),
+      }),
+    );
   });
 
   it("writes JSON output to a file when --output is provided", async () => {

@@ -140,6 +140,48 @@ describe("analyzeFeeds", () => {
     expect(fetchFeed).toHaveBeenCalledTimes(1);
     expect(analysisClient.analyze).toHaveBeenCalledTimes(2);
   });
+
+  it("emits verbose logs for month filtering and analyzed posts", async () => {
+    const feeds = ["https://example.com/feed"];
+    const fetchFeed = vi.fn(async () => ({
+      title: "Verbose Feed",
+      items: [
+        {
+          title: "Fresh with description",
+          link: "https://example.com/fresh",
+          description: "AI in iOS",
+          publishedAt: "2025-11-10T00:00:00.000Z",
+        },
+        {
+          title: "Fresh without description",
+          link: "https://example.com/no-desc",
+          publishedAt: "2025-11-11T00:00:00.000Z",
+        },
+        {
+          title: "Old post",
+          link: "https://example.com/old",
+          description: "Old",
+          publishedAt: "2024-05-01T00:00:00.000Z",
+        },
+      ],
+    }));
+    const analysisClient = { analyze: vi.fn().mockResolvedValue(makeAnalysis()) };
+    const messages: string[] = [];
+
+    await analyzeFeeds(feeds, {
+      dependencies: { fetchFeed, analysisClient },
+      months: 2,
+      clock: () => Date.parse("2025-12-05T00:00:00.000Z"),
+      onVerboseMessage(entry) {
+        messages.push(`${entry.feedTitle ?? entry.feedUrl}: ${entry.message}`);
+      },
+    });
+
+    expect(messages[0]).toMatch(/Found 2 posts within the last 2 months/i);
+    expect(messages.some((message) => message.includes('Analyzing post "Fresh with description"'))).toBe(true);
+    expect(messages.some((message) => message.includes("Fresh without description"))).toBe(false);
+    expect(analysisClient.analyze).toHaveBeenCalledTimes(1);
+  });
 });
 
 function summarize(results: FeedAnalysisResult[]): { fulfilled: FeedAnalysisResult[]; rejected: FeedAnalysisResult[] } {
