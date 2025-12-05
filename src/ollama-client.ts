@@ -505,10 +505,11 @@ export class OllamaClient {
     const trimmed = description.trim();
     return [
       "You are an expert iOS engineer helping triage blog posts for AI/mobile relevance.",
-      "Decide if the post focuses on iOS development topics that involve AI/ML, Core ML, vision models, or advanced mobile engineering techniques.",
+      "Mark a post as relevant when EITHER of these is true:\n  1. It discusses iOS or mobile engineering that involves AI/ML (Core ML, on-device vision, model integrations, etc.).\n  2. It covers developer-focused AI topics (LLMs, Claude, GPT, AI tooling, workshops, prompt building, etc.) even if the post is not explicitly about iOS—as long as AI is a primary theme.",
+      "Err on the side of inclusion whenever the summary clearly mentions AI/ML technologies, models, or tooling.",
       "Respond with a JSON object using this schema strictly:",
       '{"relevant": boolean, "confidence": number (0-1), "reason": string, "tags": string[]}',
-      "Rules:\n- relevant must be true only when the summary clearly indicates AI/ML or advanced mobile engineering for iOS.\n- confidence should be between 0 and 1.\n- tags must be 1-3 lowercase keywords summarizing the topic.",
+      "Rules:\n- If AI terms appear, mark relevant unless the post is definitely unrelated to development.\n- confidence should be between 0 and 1.\n- tags must be 1-3 lowercase keywords summarizing the topic.",
       "Output only the JSON object with no extra commentary.",
       "Blog post summary:",
       trimmed,

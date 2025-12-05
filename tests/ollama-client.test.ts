@@ -106,6 +106,7 @@ describe("OllamaClient", () => {
     expect(parsedBody.model).toBe("llama3.1");
     expect(parsedBody.prompt).toMatch(/Core ML advancements/);
     expect(parsedBody.prompt).toMatch(/Respond with a JSON object/);
+    expect(parsedBody.prompt).toMatch(/developer-focused AI topics/i);
     expect(parsedBody.stream).toBe(false);
   });
 
