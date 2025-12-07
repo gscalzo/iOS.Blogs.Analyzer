@@ -5,7 +5,7 @@ import { analyzeFeeds, DEFAULT_MONTH_WINDOW, DEFAULT_PARALLEL, type FeedAnalysis
 import { OllamaClient } from "./ollama-client.js";
 import { loadFilterConfig, type NormalizedFilterConfig } from "./config.js";
 
-export type OutputFormat = "json" | "csv";
+export type OutputFormat = "json" | "csv" | "md";
 
 export interface OutputTarget {
   format: OutputFormat;
@@ -33,7 +33,7 @@ export interface MainOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-const OUTPUT_FORMATS: OutputFormat[] = ["json", "csv"];
+const OUTPUT_FORMATS: OutputFormat[] = ["json", "csv", "md"];
 
 class CliError extends Error {
   public readonly exitCode: number;
@@ -266,8 +266,8 @@ function renderHelp(): string {
     "  --parallel <number>    Maximum concurrent requests (default: 3)",
     "  --model <name>         Ollama model to use (required)",
     `  --months <number>      Analyze posts within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
-    "  --output [format:]<target>  Choose output format (json|csv) and optional file",
-    "                              e.g., --output csv:report.csv",
+    "  --output [format:]<target>  Choose output format (json|csv|md) and optional file",
+    "                              e.g., --output csv:report.csv or --output md:notes.md",
     "  --verbose, -v           Enable verbose logging",
     "  --failed-log <file>     Write failed feed URLs to a JSON file",
     "  --perf-log <file>       Write per-feed performance metrics to a JSON file",
@@ -404,6 +404,19 @@ async function emitCsvReport(
   }
 
   stdout.write(output);
+}
+
+async function emitMarkdownReport(
+  reports: FeedReport[],
+  failedFeeds: FailedFeedEntry[],
+  destination: string | undefined,
+  stdout: NonNullable<MainOptions["stdout"]>,
+): Promise<void> {
+  const now = new Date();
+  const payload = createMarkdownPayload(reports, failedFeeds, now);
+  const targetPath = destination ?? `blogs-ai-list-${now.toISOString().slice(0, 10)}.md`;
+  await writeFile(targetPath, `${payload}\n`, "utf8");
+  stdout.write(`Results written to ${targetPath}\n`);
 }
 
 function createCsvPayload(reports: FeedReport[]): string {
@@ -591,6 +604,40 @@ async function writePerformanceLog(
 ): Promise<void> {
   await writeFile(destination, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   stdout.write(`Performance log saved to ${destination}\n`);
+}
+
+function createMarkdownPayload(reports: FeedReport[], failedFeeds: FailedFeedEntry[], now: Date): string {
+  const dateLabel = now.toISOString().slice(0, 10);
+  const lines: string[] = [];
+  lines.push(`# iOS Blogs AI List - ${dateLabel}`);
+  lines.push("");
+
+  if (reports.length === 0) {
+    lines.push("_No relevant posts found._");
+  } else {
+    for (const report of reports) {
+      const feedLabel = report.feedTitle ?? report.feedUrl;
+      lines.push(`## ${feedLabel}`);
+      for (const post of report.relevantPosts) {
+        const tags = post.tags && post.tags.length > 0 ? ` (${post.tags.join(", ")})` : "";
+        const confidence = Number.isFinite(post.confidence) ? ` • ${Math.round((post.confidence ?? 0) * 100)}%` : "";
+        const reason = post.reason ? ` — ${post.reason}` : "";
+        lines.push(`- [ ] [${post.title}](${post.link})${tags}${confidence}${reason}`);
+      }
+      lines.push("");
+    }
+  }
+
+  if (failedFeeds.length > 0) {
+    lines.push("## Failed Feeds");
+    for (const entry of failedFeeds) {
+      const reason = entry.error ? ` — ${entry.error}` : "";
+      lines.push(`- ${entry.feedUrl}${reason}`);
+    }
+    lines.push("");
+  }
+
+  return lines.join("\n");
 }
 
 async function loadRetryFeedsFromFile(filePath: string): Promise<string[]> {
@@ -795,6 +842,8 @@ export async function main(options: MainOptions = {}): Promise<void> {
     try {
       if (outputTarget.format === "csv") {
         await emitCsvReport(reports, outputTarget.destination, stdout);
+      } else if (outputTarget.format === "md") {
+        await emitMarkdownReport(reports, failureEntries, outputTarget.destination, stdout);
       } else {
         await emitJsonReport(reports, failureEntries, outputTarget.destination, stdout);
       }

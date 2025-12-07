@@ -598,6 +598,8 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - Added an end-to-end CLI test to ensure `--model` values propagate to the Ollama client.
 - Removed the `IOS_BLOGS_ANALYZER_MODEL` fallback; `--model` is now required for runs.
 - Relaxed model validation to accept any locally installed Ollama model/tag and added coverage for arbitrary models (e.g., `deepseek-r1:8b`).
+- Added AI-signal guardrails after model responses to filter out false positives (e.g., generic Swift Charts posts without AI/ML cues).
+- Added Obsidian-friendly markdown export with dated filenames and checkbox items for read-tracking.
 
 **Issues Encountered**:
 - None.

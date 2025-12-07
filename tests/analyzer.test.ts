@@ -231,4 +231,31 @@ describe("feed item analysis", () => {
     expect(result.relevantPosts).toHaveLength(1);
     expect(result.relevantPosts?.[0].title).toBe("Fresh post");
   });
+
+  it("filters out AI false positives lacking AI signals", async () => {
+    const analyzeMock = vi.fn().mockResolvedValue(makeAnalysis({ relevant: true, reason: "Great charts content" }));
+    const dependencies = {
+      fetchFeed: async () => ({
+        title: "Charts",
+        items: [
+          {
+            title: "Visual debugging with Swift Charts",
+            link: "https://example.com/charts",
+            description: "Using Swift Charts for debugging game data streams.",
+            publishedAt: "2025-11-08T00:00:00.000Z",
+          },
+        ],
+      }),
+      analysisClient: { analyze: analyzeMock },
+    };
+
+    const [result] = await analyzeFeeds(["https://example.com/feed"], {
+      dependencies,
+      months: 3,
+      clock: () => referenceNow,
+    });
+
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+    expect(result.relevantPosts ?? []).toHaveLength(0);
+  });
 });

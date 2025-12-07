@@ -162,6 +162,27 @@ describe("CLI end-to-end", () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
+  it("writes markdown output with checkboxes when requested", async () => {
+    const stdout = createWriter();
+    const stderr = createWriter();
+    const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "ios-blogs-md-"));
+    const outputPath = path.join(tempDir, "ai-list.md");
+
+    await main({
+      argv: ["--max-blogs", "1", "--output", `md:${outputPath}`, "--model", "llama3.1"],
+      stdout: stdout.writer,
+      stderr: stderr.writer,
+      env: {},
+    });
+
+    const mdContents = await fs.readFile(outputPath, "utf8");
+    expect(mdContents).toContain("# iOS Blogs AI List");
+    expect(mdContents).toMatch(/- \[ \] \[.*\]\(http.*\)/);
+    expect(stdout.messages.join("")).toContain(`Results written to ${outputPath}`);
+    expect(stderr.messages).toHaveLength(0);
+    await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
   it("passes the CLI model to the Ollama client", async () => {
     const stdout = createWriter();
     const stderr = createWriter();

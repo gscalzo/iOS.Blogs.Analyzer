@@ -24,7 +24,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 | `--parallel <number>` | Control concurrency (default 3). |
 | `--months <number>` | Only analyze posts from the last N months (default 3). |
 | `--model <name>` | Required: choose the Ollama model (any local model/tag, e.g., `llama3.1`, `qwq`, `deepseek-r1:8b`). |
-| `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
+| `--output [format:]<target>` | Select output format and destination. Formats: `json`, `csv`, `md`. Leave blank for JSON to stdout; use `csv:`/`md:` prefixes to write files (e.g., `--output csv:report.csv`, `--output md:notes.md`). If `md` has no file, a dated `blogs-ai-list-YYYY-MM-DD.md` is created. |
 | `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
 | `--failed-log <file>` | Save failed feed URLs (and their errors) to a JSON file for later retries. |
 | `--perf-log <file>` | Persist per-feed performance metrics (durations, analyzed item counts, statuses) to a JSON file for benchmarking. |
@@ -51,6 +51,9 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 # Force a specific model just for this run
 ./run.sh -- --model llama3.1:8b --max-blogs 5
 
+# Save an Obsidian-ready markdown list with checkboxes
+./run.sh -- --max-blogs 10 --output md --model llama3.1
+
 # Capture per-feed performance metrics for later analysis
 ./run.sh -- --max-blogs 25 --parallel 5 --perf-log perf-log.json --model llama3.1
 ```
@@ -60,6 +63,8 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 - **Ollama model**: required. Provide via `--model <name>` (any local model/tag such as `llama3.1`, `llama3.1:8b`, `qwq`, `deepseek-r1:8b`). The value is forwarded directly to the Ollama client for every request.
 - **Model precedence**: The CLI argument is the single source of truth; no environment fallback is used.
 - **Tagged models & detection**: The CLI fetches `/api/tags` and will reuse your installed model names as-is. If you specify an untagged prefix and only a tagged variant exists, the client will pick the installed tag automatically.
+- **False-positive guardrails**: Posts are only kept when the model marks them relevant *and* AI/ML signals are present (keywords/tags/reason). This reduces accidental matches like generic Swift Charts articles.
+- **Markdown output**: `--output md[:file]` writes a checkbox list suitable for Obsidian. If no file is provided, a dated filename like `blogs-ai-list-YYYY-MM-DD.md` is created automatically.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
 - **Failure retries**: Pass `--failed-log failed-feeds.json` to capture any feed errors (the file includes both `failedFeeds` and the full success payload). Later you can re-run just those feeds with `--retry-file failed-feeds.json`, which is handy if you need to process them on another machine or with a different network setup.
 - **Performance benchmarking**: Use `--perf-log perf.json` to dump per-feed durations, analyzed counts, and status/error data so you can compare different `--parallel`, `--months`, or filtering combinations over time.

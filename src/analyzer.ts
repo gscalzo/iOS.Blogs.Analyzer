@@ -227,17 +227,42 @@ async function analyzeFeedItems(
     analyzedCount += 1;
     const analysis = await analysisClient.analyze(item.description, { gracefulDegradation: true });
 
-    if (analysis.relevant) {
+    if (analysis.relevant && isLikelyAiPost(item.description, analysis)) {
       relevantPosts.push({
         title: item.title,
         link: item.link,
         publishedAt: item.publishedAt,
         analysis,
       });
+    } else if (analysis.relevant) {
+      emitVerbose(options, `Skipping "${item.title}" – marked relevant but no AI/ML signals detected.`);
     }
   }
 
   return { analyzedCount, relevantPosts };
+}
+
+const AI_KEYWORDS = [
+  /\bai\b/i,
+  /\bartificial intelligence/i,
+  /\bmachine learning\b/i,
+  /\bml\b/i,
+  /\bllm\b/i,
+  /\bgpt\b/i,
+  /\bclaude\b/i,
+  /\bllama\b/i,
+  /\bcore\s*ml\b/i,
+  /\btransformer\b/i,
+  /\bdiffusion\b/i,
+  /\blangchain\b/i,
+  /\bopenai\b/i,
+  /\banthropic\b/i,
+  /\bstable diffusion\b/i,
+];
+
+function isLikelyAiPost(description: string | undefined, analysis: AnalysisResult): boolean {
+  const haystacks = [description ?? "", analysis.reason ?? "", (analysis.tags ?? []).join(" ")];
+  return AI_KEYWORDS.some((pattern) => haystacks.some((text) => pattern.test(text)));
 }
 
 function shouldAnalyzeItem(item: FeedItem, cutoffDate: Date): boolean {
