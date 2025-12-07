@@ -68,6 +68,8 @@ export interface VerboseLogEntry {
   message: string;
 }
 
+const MAX_ANALYSIS_CHARS = 3000;
+
 export async function analyzeFeeds(feedUrls: readonly string[], options: AnalyzeFeedsOptions = {}): Promise<FeedAnalysisResult[]> {
   if (!Array.isArray(feedUrls)) {
     throw new TypeError("feedUrls must be an array");
@@ -215,7 +217,8 @@ async function analyzeFeedItems(
   emitVerbose(options, `Found ${itemsWithinWindow.length} posts within the last ${formatMonthsLabel(options.months)}.`);
 
   for (const item of itemsWithinWindow) {
-    if (!item.description) {
+    const text = buildAnalysisText(item);
+    if (!text) {
       continue;
     }
 
@@ -225,9 +228,9 @@ async function analyzeFeedItems(
     );
 
     analyzedCount += 1;
-    const analysis = await analysisClient.analyze(item.description, { gracefulDegradation: true });
+    const analysis = await analysisClient.analyze(text, { gracefulDegradation: true });
 
-    if (analysis.relevant && isLikelyAiPost(item.description, analysis)) {
+    if (analysis.relevant && isLikelyAiPost(text, analysis)) {
       relevantPosts.push({
         title: item.title,
         link: item.link,
@@ -260,8 +263,33 @@ const AI_KEYWORDS = [
   /\bstable diffusion\b/i,
 ];
 
-function isLikelyAiPost(description: string | undefined, analysis: AnalysisResult): boolean {
-  const haystacks = [description ?? "", analysis.reason ?? "", (analysis.tags ?? []).join(" ")];
+function buildAnalysisText(item: FeedItem): string | undefined {
+  const content = item.content ?? item.description;
+  const body = content?.trim() ? stripHtml(content.trim()) : undefined;
+  if (!body) {
+    return undefined;
+  }
+
+  const parts: string[] = [];
+  if (item.title?.trim()) {
+    parts.push(item.title.trim());
+  }
+  parts.push(body);
+
+  const combined = parts.join("\n\n").trim();
+  if (combined.length <= MAX_ANALYSIS_CHARS) {
+    return combined;
+  }
+
+  return combined.slice(0, MAX_ANALYSIS_CHARS);
+}
+
+function stripHtml(value: string): string {
+  return value.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function isLikelyAiPost(text: string | undefined, analysis: AnalysisResult): boolean {
+  const haystacks = [text ?? "", analysis.reason ?? "", (analysis.tags ?? []).join(" ")];
   return AI_KEYWORDS.some((pattern) => haystacks.some((text) => pattern.test(text)));
 }
 

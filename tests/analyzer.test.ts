@@ -242,6 +242,7 @@ describe("feed item analysis", () => {
             title: "Visual debugging with Swift Charts",
             link: "https://example.com/charts",
             description: "Using Swift Charts for debugging game data streams.",
+            content: "<p>Using Swift Charts for debugging game data streams.</p>",
             publishedAt: "2025-11-08T00:00:00.000Z",
           },
         ],
@@ -257,5 +258,33 @@ describe("feed item analysis", () => {
 
     expect(analyzeMock).toHaveBeenCalledTimes(1);
     expect(result.relevantPosts ?? []).toHaveLength(0);
+  });
+
+  it("analyzes content when description is missing", async () => {
+    const analyzeMock = vi.fn().mockResolvedValue(makeAnalysis({ relevant: true, reason: "LLM explained" }));
+    const dependencies = {
+      fetchFeed: async () => ({
+        title: "Content feed",
+        items: [
+          {
+            title: "Deep dive on LLMs",
+            link: "https://example.com/llm",
+            content: "<div>Everything about LLMs for iOS inference.</div>",
+            publishedAt: "2025-11-15T00:00:00.000Z",
+          },
+        ],
+      }),
+      analysisClient: { analyze: analyzeMock },
+    };
+
+    const [result] = await analyzeFeeds(["https://example.com/feed"], {
+      dependencies,
+      months: 3,
+      clock: () => referenceNow,
+    });
+
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+    expect(result.relevantPosts ?? []).toHaveLength(1);
+    expect(result.relevantPosts?.[0].title).toBe("Deep dive on LLMs");
   });
 });

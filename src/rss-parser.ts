@@ -125,11 +125,16 @@ function mapItemToFeed(item: ParserItem): FeedItem | null {
     return null;
   }
 
+  const contentCandidate = selectFirstString(
+    typeof item["content:encoded"] === "string" ? (item["content:encoded"] as string) : undefined,
+    item.content,
+    typeof item.summary === "string" ? item.summary : undefined,
+  );
+
   const descriptionCandidate = selectFirstString(
     item.contentSnippet,
-    item.content,
-    typeof item["content:encoded"] === "string" ? (item["content:encoded"] as string) : undefined,
     typeof item.summary === "string" ? item.summary : undefined,
+    item.content,
   );
 
   const publishedAt = selectFirstString(item.isoDate, item.updated, item.published, item.pubDate);
@@ -138,6 +143,7 @@ function mapItemToFeed(item: ParserItem): FeedItem | null {
     title,
     link,
     description: descriptionCandidate ?? undefined,
+    content: contentCandidate ?? undefined,
     publishedAt: publishedAt ?? undefined,
   } satisfies FeedItem;
 }
