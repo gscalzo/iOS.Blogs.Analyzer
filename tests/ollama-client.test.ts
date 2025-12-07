@@ -122,15 +122,23 @@ describe("OllamaClient", () => {
     expect(parsedBody.model).toBe("llama3.1:8b");
   });
 
-  it("rejects unsupported models", () => {
-    expect(() =>
-      new OllamaClient({
-        fetcher: createMockFetcher(async () =>
-          createJsonResponse({ response: JSON.stringify({ relevant: false }) }),
-        ).fetcher,
-        model: "not-real",
-      }),
-    ).toThrowError(OllamaConfigurationError);
+  it("accepts arbitrary model names and uses them when installed", async () => {
+    const fetcher = vi.fn<[string, FetchInit?], Promise<FetchResponse>>(async (url) => {
+      if (url.endsWith("/api/tags")) {
+        return createJsonResponse({ models: [{ name: "deepseek-r1:8b" }] });
+      }
+      return createJsonResponse({ response: JSON.stringify({ relevant: false, reason: "irrelevant" }) });
+    });
+    const client = new OllamaClient({ fetcher, model: "deepseek-r1:8b" });
+
+    await client.checkConnection();
+    await client.analyzeText("Some description");
+
+    const generateCall = fetcher.mock.calls.find(([calledUrl]) => calledUrl.endsWith("/api/generate"));
+    expect(generateCall).toBeDefined();
+    const [, init] = generateCall ?? [];
+    const payload = JSON.parse(init?.body ?? "{}");
+    expect(payload.model).toBe("deepseek-r1:8b");
   });
 
   it("returns structured analysis details", async () => {

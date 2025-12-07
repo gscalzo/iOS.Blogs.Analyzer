@@ -1,5 +1,4 @@
 const DEFAULT_BASE_URL = "http://127.0.0.1:11434";
-const SUPPORTED_MODEL_PREFIXES = ["llama3.1", "qwq"] as const;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_DELAY_MS = 250;
@@ -216,12 +215,6 @@ export class OllamaClient {
       throw new OllamaConfigurationError("Ollama model is required; pass --model <name>");
     }
 
-    if (!this.isSupportedModel(trimmed)) {
-      throw new OllamaConfigurationError(
-        `Unsupported Ollama model "${trimmed}". Supported models: ${SUPPORTED_MODEL_PREFIXES.join(", ")}`,
-      );
-    }
-
     return trimmed as SupportedModel;
   }
 
@@ -235,16 +228,7 @@ export class OllamaClient {
 
     const normalized = resolved.trim();
 
-    if (!this.isSupportedModel(normalized)) {
-      throw new OllamaConfigurationError(
-        `Unsupported Ollama model "${normalized}". Supported models: ${SUPPORTED_MODEL_PREFIXES.join(", ")}`,
-      );
-    }
-
     return normalized as SupportedModel;
-  }
-  private isSupportedModel(candidate: string): boolean {
-    return SUPPORTED_MODEL_PREFIXES.some((prefix) => candidate === prefix || candidate.startsWith(`${prefix}:`));
   }
 
   private normalizeTimeout(timeout?: number): number {

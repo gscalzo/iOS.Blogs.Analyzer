@@ -5,7 +5,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 ## Prerequisites
 
 - Node.js 20+
-- Ollama running locally with the `llama3.1` or `qwq` model pulled
+- Ollama running locally with your desired model pulled (e.g., `llama3.1`, `qwq`, `deepseek-r1:8b`, etc.)
 
 ## Quick Start
 
@@ -23,7 +23,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 | `--max-blogs <number>` | Limit the number of feeds processed (useful for smoke tests). |
 | `--parallel <number>` | Control concurrency (default 3). |
 | `--months <number>` | Only analyze posts from the last N months (default 3). |
-| `--model <name>` | Required: choose the Ollama model (e.g., `llama3.1`, `llama3.1:8b`, or `qwq`). |
+| `--model <name>` | Required: choose the Ollama model (any local model/tag, e.g., `llama3.1`, `qwq`, `deepseek-r1:8b`). |
 | `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
 | `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
 | `--failed-log <file>` | Save failed feed URLs (and their errors) to a JSON file for later retries. |
@@ -57,9 +57,9 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 
 ### Configuration Notes
 
-- **Ollama model**: required. Provide via `--model <name>` (e.g., `llama3.1`, `llama3.1:8b`, or `qwq`). The value is forwarded directly to the Ollama client for every request.
+- **Ollama model**: required. Provide via `--model <name>` (any local model/tag such as `llama3.1`, `llama3.1:8b`, `qwq`, `deepseek-r1:8b`). The value is forwarded directly to the Ollama client for every request.
 - **Model precedence**: The CLI argument is the single source of truth; no environment fallback is used.
-- **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
+- **Tagged models & detection**: The CLI fetches `/api/tags` and will reuse your installed model names as-is. If you specify an untagged prefix and only a tagged variant exists, the client will pick the installed tag automatically.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
 - **Failure retries**: Pass `--failed-log failed-feeds.json` to capture any feed errors (the file includes both `failedFeeds` and the full success payload). Later you can re-run just those feeds with `--retry-file failed-feeds.json`, which is handy if you need to process them on another machine or with a different network setup.
 - **Performance benchmarking**: Use `--perf-log perf.json` to dump per-feed durations, analyzed counts, and status/error data so you can compare different `--parallel`, `--months`, or filtering combinations over time.
