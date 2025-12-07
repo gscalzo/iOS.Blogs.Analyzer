@@ -1,6 +1,4 @@
 const DEFAULT_BASE_URL = "http://127.0.0.1:11434";
-const DEFAULT_MODEL = "llama3.1";
-const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
 const SUPPORTED_MODEL_PREFIXES = ["llama3.1", "qwq"] as const;
 const DEFAULT_TIMEOUT_MS = 15_000;
 const DEFAULT_MAX_RETRIES = 2;
@@ -106,7 +104,7 @@ export class OllamaClient {
   constructor(options: OllamaClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
     this.fetcher = this.resolveFetcher(options.fetcher);
-    this.defaultModel = this.resolveModel(options.model);
+    this.defaultModel = this.resolveInitialModel(options.model);
     this.timeoutMs = this.normalizeTimeout(options.timeoutMs);
     this.maxRetries = this.normalizeRetryCount(options.maxRetries);
     this.retryDelayMs = this.normalizeDelay(options.retryDelayMs);
@@ -211,12 +209,28 @@ export class OllamaClient {
     return globalFetch.bind(globalThis);
   }
 
+  private resolveInitialModel(model?: string): SupportedModel {
+    const trimmed = typeof model === "string" ? model.trim() : "";
+
+    if (trimmed.length === 0) {
+      throw new OllamaConfigurationError("Ollama model is required; pass --model <name>");
+    }
+
+    if (!this.isSupportedModel(trimmed)) {
+      throw new OllamaConfigurationError(
+        `Unsupported Ollama model "${trimmed}". Supported models: ${SUPPORTED_MODEL_PREFIXES.join(", ")}`,
+      );
+    }
+
+    return trimmed as SupportedModel;
+  }
+
   private resolveModel(model?: string, options: { allowDefault?: boolean } = {}): SupportedModel {
-    const candidates = [model, process.env[MODEL_ENV_VARIABLE], options.allowDefault ? this.defaultModel : DEFAULT_MODEL];
+    const candidates = [model, options.allowDefault ? this.defaultModel : undefined];
     const resolved = candidates.find((value) => typeof value === "string" && value.trim().length > 0);
 
     if (!resolved) {
-      throw new OllamaConfigurationError("Unable to determine Ollama model to use");
+      throw new OllamaConfigurationError("Ollama model is required; pass --model <name>");
     }
 
     const normalized = resolved.trim();

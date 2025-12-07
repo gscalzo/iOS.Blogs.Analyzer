@@ -101,7 +101,7 @@ describe("CLI end-to-end", () => {
       return currentTime;
     };
 
-    await main({ argv: ["--max-blogs", "1", "--verbose"], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
+    await main({ argv: ["--max-blogs", "1", "--verbose", "--model", "llama3.1"], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
 
     const stdoutText = stdout.messages.join("");
     expect(stdoutText).toContain("Loaded 1 feed URLs (languages: en; categories: 1 categories).");
@@ -121,7 +121,7 @@ describe("CLI end-to-end", () => {
     const outputPath = path.join(tempDir, "report.csv");
 
     await main({
-      argv: ["--max-blogs", "1", "--output", `csv:${outputPath}`],
+      argv: ["--max-blogs", "1", "--output", `csv:${outputPath}`, "--model", "llama3.1"],
       stdout: stdout.writer,
       stderr: stderr.writer,
       env: {},
@@ -143,7 +143,7 @@ describe("CLI end-to-end", () => {
     const perfLogPath = path.join(tempDir, "perf.json");
 
     await main({
-      argv: ["--max-blogs", "1", "--perf-log", perfLogPath],
+      argv: ["--max-blogs", "1", "--perf-log", perfLogPath, "--model", "llama3.1"],
       stdout: stdout.writer,
       stderr: stderr.writer,
       env: {},
@@ -160,5 +160,17 @@ describe("CLI end-to-end", () => {
     expect(stdout.messages.join("")).toContain(`Performance log saved to ${perfLogPath}`);
     expect(stderr.messages).toHaveLength(0);
     await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  it("passes the CLI model to the Ollama client", async () => {
+    const stdout = createWriter();
+    const stderr = createWriter();
+
+    await main({ argv: ["--max-blogs", "1", "--model", "qwq"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+
+    expect(ollamaMocks.factory).toHaveBeenCalledTimes(1);
+    expect(ollamaMocks.factory.mock.calls[0][0]).toMatchObject({ model: "qwq" });
+    expect(ollamaMocks.analyze).toHaveBeenCalled();
+    expect(stderr.messages).toHaveLength(0);
   });
 });

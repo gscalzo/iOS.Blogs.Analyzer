@@ -88,7 +88,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Implement Ollama HTTP API client
 - [x] Create function: `analyzeText(description: string): Promise<boolean>`
 - [x] Support both `llama3.1` and `qwq` models
-- [x] Add model selection via CLI parameter or env variable (via `IOS_BLOGS_ANALYZER_MODEL`)
+- [x] Add model selection via CLI parameter
 - [x] Implement connection checking
 
 #### 3.2 Prompt Engineering ✅
@@ -144,7 +144,7 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 - [x] Arguments:
   - `--parallel <N>` - Number of concurrent requests (default: 3)
   - `--max-blogs <N>` - Maximum blogs to check (optional, for testing)
-  - `--model <name>` - Ollama model to use (default: llama3.1)
+  - `--model <name>` - Ollama model to use (required; no env fallback)
   - `--output [format:]<target>` - Output destination and format (JSON default, CSV optional)
   - `--verbose` - Verbose logging
 - [x] Display help with `--help`
@@ -589,6 +589,20 @@ Build a TypeScript command-line tool that analyzes iOS blog RSS feeds to identif
 **Next Session**:
 - Run the CLI against progressively larger slices of `blogs.json` (using live Ollama) while emitting perf logs to determine the optimal `--parallel` defaults and capture trend data.
 - Compare perf log outputs across runs to document tuning guidance in README/plan and finish Phase 4.3 benchmarking requirements.
+
+### Session 19: 2025-12-07 - Ollama Model Override
+**Status**: ✅ Complete
+
+**Completed**:
+- CLI now forwards the requested model to the Ollama client instead of relying solely on the hardcoded default.
+- Added an end-to-end CLI test to ensure `--model` values propagate to the Ollama client.
+- Removed the `IOS_BLOGS_ANALYZER_MODEL` fallback; `--model` is now required for runs.
+
+**Issues Encountered**:
+- None.
+
+**Next Session**:
+- Validate the model override behavior with a live Ollama daemon and tagged models.
 
 ---
 

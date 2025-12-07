@@ -12,7 +12,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 ```bash
 ./run.sh install   # install dependencies
 ./run.sh build     # compile TypeScript -> dist
-./run.sh           # run analyzer with defaults
+./run.sh -- --model llama3.1  # run analyzer (model is required)
 ./run.sh test      # run the Vitest suite
 ```
 
@@ -23,7 +23,7 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 | `--max-blogs <number>` | Limit the number of feeds processed (useful for smoke tests). |
 | `--parallel <number>` | Control concurrency (default 3). |
 | `--months <number>` | Only analyze posts from the last N months (default 3). |
-| `--model <name>` | Override the Ollama model (`IOS_BLOGS_ANALYZER_MODEL`). |
+| `--model <name>` | Required: choose the Ollama model (e.g., `llama3.1`, `llama3.1:8b`, or `qwq`). |
 | `--output [format:]<target>` | Select output format and destination. Leave blank for JSON to stdout, use `csv`/`json` prefixes (e.g., `--output csv:report.csv` or `--output csv` for CSV to stdout). |
 | `--verbose`, `-v` | Print per-feed relevant post summaries and step-by-step analysis logs. |
 | `--failed-log <file>` | Save failed feed URLs (and their errors) to a JSON file for later retries. |
@@ -40,21 +40,25 @@ An opinionated TypeScript CLI for iOS developers who want a daily radar on AI in
 
 ```bash
 # Pull the latest directory (run.sh handles this automatically), analyze 5 feeds with verbose summaries, and write JSON
-./run.sh -- --max-blogs 5 --verbose --output results.json
+./run.sh -- --max-blogs 5 --verbose --output results.json --model llama3.1
 
 # Export the last 2 months of posts to CSV and read from stdout
-./run.sh -- --months 2 --output csv
+./run.sh -- --months 2 --output csv --model llama3.1
 
 # Stress-test concurrency with 5 workers and a different model
-IOS_BLOGS_ANALYZER_MODEL=qwq ./run.sh -- --parallel 5 --max-blogs 10
+./run.sh -- --parallel 5 --max-blogs 10 --model qwq
+
+# Force a specific model just for this run
+./run.sh -- --model llama3.1:8b --max-blogs 5
 
 # Capture per-feed performance metrics for later analysis
-./run.sh -- --max-blogs 25 --parallel 5 --perf-log perf-log.json
+./run.sh -- --max-blogs 25 --parallel 5 --perf-log perf-log.json --model llama3.1
 ```
 
 ### Configuration Notes
 
-- **Ollama model**: defaults to `llama3.1`. Override via `--model <name>` or `IOS_BLOGS_ANALYZER_MODEL`.
+- **Ollama model**: required. Provide via `--model <name>` (e.g., `llama3.1`, `llama3.1:8b`, or `qwq`). The value is forwarded directly to the Ollama client for every request.
+- **Model precedence**: The CLI argument is the single source of truth; no environment fallback is used.
 - **Tagged models**: If you only have a tagged variant such as `llama3.1:8b`, pass it via `--model llama3.1:8b`. The CLI also autodetects installed tags during the Ollama connectivity check and will prefer them when the base model is missing.
 - **Verbose mode**: `--verbose`/`-v` announces how many posts fall within the month window for each feed and logs every item as it is handed to Ollama, then prints the final relevant-post summary.
 - **Failure retries**: Pass `--failed-log failed-feeds.json` to capture any feed errors (the file includes both `failedFeeds` and the full success payload). Later you can re-run just those feeds with `--retry-file failed-feeds.json`, which is handy if you need to process them on another machine or with a different network setup.

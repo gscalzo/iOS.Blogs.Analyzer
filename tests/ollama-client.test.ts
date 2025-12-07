@@ -35,12 +35,11 @@ function createJsonResponse(body: unknown, overrides: Partial<FetchResponse> = {
 describe("OllamaClient", () => {
   afterEach(() => {
     vi.restoreAllMocks();
-    delete process.env.IOS_BLOGS_ANALYZER_MODEL;
   });
 
   it("checks connectivity via /api/tags", async () => {
     const { mock, fetcher } = createMockFetcher(async () => createJsonResponse({ models: [] }));
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     await expect(client.checkConnection()).resolves.toBe(true);
 
@@ -57,7 +56,7 @@ describe("OllamaClient", () => {
       }
       return createJsonResponse({ response: JSON.stringify({ relevant: false }) });
     });
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     await client.checkConnection();
     await client.analyzeText("Discusses Core ML");
@@ -81,7 +80,7 @@ describe("OllamaClient", () => {
         },
       ),
     );
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     await expect(client.checkConnection()).rejects.toThrowError(OllamaRequestError);
   });
@@ -92,7 +91,7 @@ describe("OllamaClient", () => {
         response: JSON.stringify({ relevant: true, confidence: 0.82, reason: "Focuses on Core ML", tags: ["ios"] }),
       }),
     );
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     const result = await client.analyzeText("Discusses Core ML advancements");
 
@@ -110,20 +109,6 @@ describe("OllamaClient", () => {
     expect(parsedBody.stream).toBe(false);
   });
 
-  it("uses model override from environment", async () => {
-    process.env.IOS_BLOGS_ANALYZER_MODEL = "qwq";
-    const { mock, fetcher } = createMockFetcher(async () =>
-      createJsonResponse({ response: JSON.stringify({ relevant: false, reason: "No mobile content" }) }),
-    );
-
-    const client = new OllamaClient({ fetcher });
-    await client.analyzeText("Some description");
-
-    const [, init] = mock.mock.calls[0];
-    const parsedBody = JSON.parse(init?.body ?? "{}");
-    expect(parsedBody.model).toBe("qwq");
-  });
-
   it("accepts explicitly tagged model overrides", async () => {
     const { mock, fetcher } = createMockFetcher(async () =>
       createJsonResponse({ response: JSON.stringify({ relevant: false, reason: "Not AI" }) }),
@@ -138,12 +123,12 @@ describe("OllamaClient", () => {
   });
 
   it("rejects unsupported models", () => {
-    process.env.IOS_BLOGS_ANALYZER_MODEL = "not-real";
     expect(() =>
       new OllamaClient({
         fetcher: createMockFetcher(async () =>
           createJsonResponse({ response: JSON.stringify({ relevant: false }) }),
         ).fetcher,
+        model: "not-real",
       }),
     ).toThrowError(OllamaConfigurationError);
   });
@@ -158,7 +143,7 @@ describe("OllamaClient", () => {
     const { fetcher } = createMockFetcher(async () =>
       createJsonResponse({ response: JSON.stringify(payload) }),
     );
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     const analysis = await client.analyze("New Core ML model for SwiftUI widgets");
 
@@ -173,7 +158,7 @@ describe("OllamaClient", () => {
     const { fetcher } = createMockFetcher(async () =>
       createJsonResponse({ response: JSON.stringify({ relevant: false, reason: "It is about marketing" }) }),
     );
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     const result = await client.analyze("Marketing strategies for app launch");
 
@@ -183,7 +168,7 @@ describe("OllamaClient", () => {
 
   it("falls back to yes/no strings when JSON is missing", async () => {
     const { fetcher } = createMockFetcher(async () => createJsonResponse({ response: "YES definitely" }));
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     const result = await client.analyze("Mentions Swift, Core ML, and on-device vision");
 
@@ -194,7 +179,7 @@ describe("OllamaClient", () => {
 
   it("throws when no decision can be parsed", async () => {
     const { fetcher } = createMockFetcher(async () => createJsonResponse({ response: "Maybe?" }));
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     await expect(client.analyze("Ambiguous content")).rejects.toThrowError(OllamaParseError);
   });
@@ -212,7 +197,7 @@ describe("OllamaClient", () => {
       });
     });
 
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
     const result = await client.analyzeText("Discusses Vision Pro with Core ML");
 
     expect(result).toBe(true);
@@ -232,7 +217,7 @@ describe("OllamaClient", () => {
       ),
     );
 
-    const client = new OllamaClient({ fetcher });
+    const client = new OllamaClient({ fetcher, model: "llama3.1" });
 
     await expect(client.analyze("bad input"))
       .rejects.toThrowError(new OllamaRequestError("", 400).constructor);
@@ -244,7 +229,7 @@ describe("OllamaClient", () => {
       throw new TypeError("connection refused");
     });
 
-    const client = new OllamaClient({ fetcher, maxRetries: 1, retryDelayMs: 0 });
+    const client = new OllamaClient({ fetcher, maxRetries: 1, retryDelayMs: 0, model: "llama3.1" });
 
     await expect(client.analyze("No network"))
       .rejects.toThrowError(OllamaUnavailableError);
@@ -256,7 +241,7 @@ describe("OllamaClient", () => {
       throw new TypeError("no route to host");
     });
 
-    const client = new OllamaClient({ fetcher, maxRetries: 0 });
+    const client = new OllamaClient({ fetcher, maxRetries: 0, model: "llama3.1" });
     const analysis = await client.analyze("Offline scenario", { gracefulDegradation: true });
 
     expect(analysis.relevant).toBe(false);
@@ -280,7 +265,7 @@ describe("OllamaClient", () => {
         }),
     );
 
-    const client = new OllamaClient({ fetcher, timeoutMs: 5, maxRetries: 0 });
+    const client = new OllamaClient({ fetcher, timeoutMs: 5, maxRetries: 0, model: "llama3.1" });
     const promise = client.analyze("long running");
 
     await expect(promise).rejects.toThrowError(OllamaUnavailableError);

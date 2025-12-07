@@ -33,7 +33,6 @@ export interface MainOptions {
   env?: NodeJS.ProcessEnv;
 }
 
-const MODEL_ENV_VARIABLE = "IOS_BLOGS_ANALYZER_MODEL";
 const OUTPUT_FORMATS: OutputFormat[] = ["json", "csv"];
 
 class CliError extends Error {
@@ -204,6 +203,10 @@ export function parseArguments(argv: string[]): CliArguments {
     result.perfLog = trimmed;
   }
 
+  if (!result.model && !result.helpRequested) {
+    throw new CliError("--model is required (e.g., --model llama3.1)");
+  }
+
   return result;
 }
 
@@ -261,7 +264,7 @@ function renderHelp(): string {
     "Options:",
     "  --max-blogs <number>   Limit the number of feeds processed",
     "  --parallel <number>    Maximum concurrent requests (default: 3)",
-    "  --model <name>         Ollama model to use (default: llama3.1)",
+    "  --model <name>         Ollama model to use (required)",
     `  --months <number>      Analyze posts within the last N months (default: ${DEFAULT_MONTH_WINDOW})`,
     "  --output [format:]<target>  Choose output format (json|csv) and optional file",
     "                              e.g., --output csv:report.csv",
@@ -665,7 +668,6 @@ export async function main(options: MainOptions = {}): Promise<void> {
     stdout = process.stdout,
     stderr = process.stderr,
     now = () => Date.now(),
-    env = process.env,
   } = options;
 
   let cliArguments: CliArguments;
@@ -684,11 +686,7 @@ export async function main(options: MainOptions = {}): Promise<void> {
     return;
   }
 
-  if (cliArguments.model) {
-    env[MODEL_ENV_VARIABLE] = cliArguments.model;
-  }
-
-  const ollamaClient = new OllamaClient();
+  const ollamaClient = new OllamaClient({ model: cliArguments.model });
 
   try {
     await ollamaClient.checkConnection();

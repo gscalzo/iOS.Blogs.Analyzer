@@ -70,13 +70,15 @@ const sampleBlogs: BlogsDirectory = [
   },
 ];
 
+const REQUIRED_MODEL_ARGS = ["--model", "llama3.1"] as const;
+
 describe("parseArguments", () => {
   it("parses --max-blogs when provided", () => {
-    expect(parseArguments(["--max-blogs", "2"])).toEqual({ maxBlogs: 2 });
+    expect(parseArguments(["--max-blogs", "2", "--model", "llama3.1"])).toEqual({ maxBlogs: 2, model: "llama3.1" });
   });
 
   it("parses --parallel when provided", () => {
-    expect(parseArguments(["--parallel", "4"])).toEqual({ parallel: 4 });
+    expect(parseArguments(["--parallel", "4", "--model", "llama3.1"])).toEqual({ parallel: 4, model: "llama3.1" });
   });
 
   it("parses model and trims value", () => {
@@ -84,47 +86,56 @@ describe("parseArguments", () => {
   });
 
   it("parses output and verbose flags", () => {
-    expect(parseArguments(["--output", "results.json", "--verbose"])).toEqual({
+    expect(parseArguments(["--output", "results.json", "--verbose", "--model", "llama3.1"])).toEqual({
       output: { format: "json", destination: "results.json" },
       verbose: true,
+      model: "llama3.1",
     });
   });
 
   it("parses output format when prefixed", () => {
-    expect(parseArguments(["--output", "csv:reports.csv"])).toEqual({
+    expect(parseArguments(["--output", "csv:reports.csv", "--model", "llama3.1"])).toEqual({
       output: { format: "csv", destination: "reports.csv" },
+      model: "llama3.1",
     });
   });
 
   it("supports stdout CSV selection via --output csv", () => {
-    expect(parseArguments(["--output", "csv"])).toEqual({
+    expect(parseArguments(["--output", "csv", "--model", "llama3.1"])).toEqual({
       output: { format: "csv", destination: undefined },
+      model: "llama3.1",
     });
   });
 
   it("supports -v alias for verbose logging", () => {
-    expect(parseArguments(["-v"])).toEqual({ verbose: true });
+    expect(parseArguments(["-v", "--model", "llama3.1"])).toEqual({ verbose: true, model: "llama3.1" });
   });
 
   it("parses failed-log and retry-file arguments", () => {
-    expect(parseArguments(["--failed-log", "failed.json", "--retry-file", "retry.json"])).toEqual({
+    expect(parseArguments(["--failed-log", "failed.json", "--retry-file", "retry.json", "--model", "llama3.1"])).toEqual({
       failedLog: "failed.json",
       retryFile: "retry.json",
+      model: "llama3.1",
     });
   });
 
   it("parses --perf-log argument", () => {
-    expect(parseArguments(["--perf-log", "perf.json"])).toEqual({
+    expect(parseArguments(["--perf-log", "perf.json", "--model", "llama3.1"])).toEqual({
       perfLog: "perf.json",
+      model: "llama3.1",
     });
   });
 
   it("parses --months when provided", () => {
-    expect(parseArguments(["--months", "6"])).toEqual({ months: 6 });
+    expect(parseArguments(["--months", "6", "--model", "llama3.1"])).toEqual({ months: 6, model: "llama3.1" });
   });
 
   it("marks help flag", () => {
     expect(parseArguments(["--help"])).toEqual({ helpRequested: true });
+  });
+
+  it("requires a model when not requesting help", () => {
+    expect(() => parseArguments([])).toThrow(/--model is required/);
   });
 
   it("throws on unknown flags", () => {
@@ -201,7 +212,7 @@ describe("main", () => {
     let currentTime = 0;
     const now = () => currentTime;
 
-    await main({ argv: [], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
+    await main({ argv: [...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, now, env: {} });
 
     expect(mockedLoadBlogs).toHaveBeenCalledTimes(1);
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, {
@@ -238,7 +249,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--max-blogs", "1"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--max-blogs", "1", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedExtractFeedUrls).toHaveBeenCalledWith(sampleBlogs, {
       maxBlogs: 1,
@@ -252,7 +263,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--max-blogs", "nope"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--max-blogs", "nope", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
     expect(mockedExtractFeedUrls).not.toHaveBeenCalled();
@@ -270,7 +281,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--parallel", "5"], stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
+    await main({ argv: ["--parallel", "5", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
 
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       expect.any(Array),
@@ -288,7 +299,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--months", "2"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--months", "2", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       expect.any(Array),
@@ -317,7 +328,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
+    await main({ argv: [...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, now: () => 0, env: {} });
 
     expect(stdout.messages.join("")).toMatch(/Finished 1 feeds: 0 succeeded, 1 failed/);
     expect(stderr.messages.join("")).toContain("boom");
@@ -331,7 +342,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: [...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(stdout.messages.join("")).toContain("No feeds to process");
     expect(mockedAnalyzeFeeds).not.toHaveBeenCalled();
@@ -346,7 +357,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: [...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(stderr.messages.join("")).toContain("offline");
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
@@ -362,21 +373,6 @@ describe("main", () => {
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
   });
 
-  it("overrides Ollama model via CLI", async () => {
-    mockedLoadBlogs.mockResolvedValue(sampleBlogs);
-    mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
-    mockedAnalyzeFeeds.mockResolvedValue([
-      { feedUrl: "https://example.com/feed", status: "fulfilled", feed: { title: "Example", items: [] }, durationMs: 400 },
-    ]);
-
-    const stdout = createWriter();
-    const env: NodeJS.ProcessEnv = {};
-
-    await main({ argv: ["--model", "qwq"], stdout: stdout.writer, stderr: createWriter().writer, env });
-
-    expect(env.IOS_BLOGS_ANALYZER_MODEL).toBe("qwq");
-  });
-
   it("passes verbose logging callback when --verbose is provided", async () => {
     mockedLoadBlogs.mockResolvedValue(sampleBlogs);
     mockedExtractFeedUrls.mockReturnValue(["https://example.com/feed"]);
@@ -387,7 +383,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--verbose"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--verbose", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedAnalyzeFeeds).toHaveBeenCalledWith(
       ["https://example.com/feed"],
@@ -432,7 +428,7 @@ describe("main", () => {
     };
 
     await main({
-      argv: ["--perf-log", "perf.json"],
+      argv: ["--perf-log", "perf.json", ...REQUIRED_MODEL_ARGS],
       stdout: stdout.writer,
       stderr: stderr.writer,
       env: {},
@@ -482,7 +478,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--output", "results.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--output", "results.json", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     const payload = mockedWriteFile.mock.calls[0][1];
     expect(payload).toContain('"feeds"');
@@ -500,7 +496,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--retry-file", "failed.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--retry-file", "failed.json", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedLoadBlogs).not.toHaveBeenCalled();
     expect(mockedExtractFeedUrls).not.toHaveBeenCalled();
@@ -521,7 +517,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--failed-log", "failed.json"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--failed-log", "failed.json", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedWriteFile).toHaveBeenCalledWith("failed.json", expect.stringContaining('"failedFeeds"'), "utf8");
     expect(stdout.messages.join("")).toContain("Failed feeds saved to failed.json");
@@ -556,7 +552,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--output", "csv:results.csv"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--output", "csv:results.csv", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedWriteFile).toHaveBeenCalledTimes(1);
     const csvPayload = mockedWriteFile.mock.calls[0][1];
@@ -593,7 +589,7 @@ describe("main", () => {
     const stdout = createWriter();
     const stderr = createWriter();
 
-    await main({ argv: ["--output", "csv"], stdout: stdout.writer, stderr: stderr.writer, env: {} });
+    await main({ argv: ["--output", "csv", ...REQUIRED_MODEL_ARGS], stdout: stdout.writer, stderr: stderr.writer, env: {} });
 
     expect(mockedWriteFile).not.toHaveBeenCalled();
     const stdoutText = stdout.messages.join("");
